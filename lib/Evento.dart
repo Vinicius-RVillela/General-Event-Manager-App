@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'organizador.dart';
+import 'Organizador.dart';
 import 'HistoricoEvento.dart';
 import './endereco.dart';
 
