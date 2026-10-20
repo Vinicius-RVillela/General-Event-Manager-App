@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'usuario.dart';
 
 class Convidado extends Usuario {
@@ -17,7 +18,9 @@ class Convidado extends Usuario {
     print('Digite a idade do convidado: ');
     idade = int.tryParse(stdin.readLineSync() ?? '');
 
-    print('Digite o número do assento do convidado - definido por letra e número: ');
+    print(
+      'Digite o número do assento do convidado - definido por letra e número: ',
+    );
     assento = stdin.readLineSync();
   }
 

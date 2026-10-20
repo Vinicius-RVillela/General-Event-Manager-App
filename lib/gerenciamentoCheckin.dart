@@ -1,40 +1,67 @@
 import 'dart:io';
+
 import 'Convite.dart';
 import 'Checkin.dart';
+import 'Evento.dart';
 
 /// Gerencia o check-in dos convidados no dia do evento.
-/// Só permite check-in de convites com status "confirmado" — quem nunca
-/// confirmou presença não pode ser marcado como presente.
-void gerenciarCheckin(List<Convite> convites, List<Checkin> checkins) {
+/// Só permite check-in de convites com status "confirmado" DO EVENTO ATIVO —
+/// quem nunca confirmou presença, ou foi convidado para outro evento,
+/// não pode ser marcado como presente aqui.
+void gerenciarCheckin(
+  List<Convite> convites,
+  List<Checkin> checkins,
+  Evento evento,
+) {
   bool continuar = true;
 
   while (continuar) {
-    print('\n=== Gerenciador de Check-in ===');
+    // Recalculadas a cada volta do menu, porque as listas mudam durante o uso.
+    final confirmados = convites
+        .where(
+          (c) => c.evento == evento && c.status == StatusConfirmacao.confirmado,
+        )
+        .toList();
+    final checkinsDoEvento = checkins
+        .where((chk) => chk.convite?.evento == evento)
+        .toList();
+    // Confirmados que ainda não chegaram (não têm check-in registrado).
+    final aguardando = confirmados
+        .where((c) => !checkinsDoEvento.any((chk) => chk.convite == c))
+        .toList();
+
+    print('\n=== Gerenciador de Check-in (${evento.nomeEvento}) ===');
+    print(
+      'Já chegaram: ${checkinsDoEvento.length} | Aguardando: ${aguardando.length}',
+    );
     print('1 - Fazer check-in');
     print('2 - Listar check-ins realizados');
     print('3 - Sair');
 
-    String opcao = stdin.readLineSync()!;
+    String opcao = stdin.readLineSync() ?? '';
 
     switch (opcao) {
       case '1':
-        var confirmados =
-            convites.where((c) => c.status == StatusConfirmacao.confirmado).toList();
-
         if (confirmados.isEmpty) {
-          print('Nenhum convite confirmado disponível para check-in.');
+          print(
+            'Nenhum convite confirmado disponível para check-in neste evento.',
+          );
+          break;
+        }
+        if (aguardando.isEmpty) {
+          print('Todos os convidados confirmados já fizeram check-in.');
           break;
         }
 
-        print('Convites confirmados:');
-        for (var c in confirmados) {
+        print('Convidados aguardando check-in:');
+        for (var c in aguardando) {
           print('${c.id} - ${c.convidado?.nome}');
         }
         print('Digite o ID do convite para dar check-in: ');
-        int? idConvite = int.tryParse(stdin.readLineSync()!);
+        int? idConvite = int.tryParse(stdin.readLineSync() ?? '');
 
         Convite? conviteEscolhido;
-        for (var c in confirmados) {
+        for (var c in aguardando) {
           if (c.id == idConvite) {
             conviteEscolhido = c;
             break;
@@ -42,13 +69,7 @@ void gerenciarCheckin(List<Convite> convites, List<Checkin> checkins) {
         }
 
         if (conviteEscolhido == null) {
-          print('Convite não encontrado entre os confirmados.');
-          break;
-        }
-
-        bool jaFezCheckin = checkins.any((chk) => chk.convite == conviteEscolhido);
-        if (jaFezCheckin) {
-          print('Este convidado já fez check-in anteriormente.');
+          print('Convite não encontrado entre os que aguardam check-in.');
           break;
         }
 
@@ -62,10 +83,10 @@ void gerenciarCheckin(List<Convite> convites, List<Checkin> checkins) {
         break;
 
       case '2':
-        if (checkins.isEmpty) {
-          print('Nenhum check-in realizado ainda.');
+        if (checkinsDoEvento.isEmpty) {
+          print('Nenhum check-in realizado ainda neste evento.');
         } else {
-          for (var chk in checkins) {
+          for (var chk in checkinsDoEvento) {
             print(chk.obterDados());
           }
         }

@@ -1,6 +1,8 @@
 import 'endereco.dart';
 import 'Evento.dart';
+
 import 'dart:math';
+
 import 'package:bcrypt/bcrypt.dart';
 
 class Usuario {
@@ -45,7 +47,8 @@ class Usuario {
   static String _gerarCodigoUnico() {
     String codigo;
     do {
-      codigo = (100000 + _sorteio.nextInt(900000)).toString(); // 6 dígitos: 100000 a 999999
+      codigo = (100000 + _sorteio.nextInt(900000))
+          .toString(); // 6 dígitos: 100000 a 999999
     } while (_codigosJaUsados.contains(codigo));
     _codigosJaUsados.add(codigo);
     return codigo;
@@ -69,7 +72,11 @@ class Usuario {
     return BCrypt.checkpw(tentativa, _senhaHash);
   }
 
-  bool redefinirSenha(String nomeConfirma, String cpfConfirma, String novaSenha) {
+  bool redefinirSenha(
+    String nomeConfirma,
+    String cpfConfirma,
+    String novaSenha,
+  ) {
     if (nomeConfirma == nome && cpfConfirma == cpf) {
       _senhaHash = BCrypt.hashpw(novaSenha, BCrypt.gensalt());
       return true;
