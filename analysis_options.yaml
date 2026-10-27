@@ -1,0 +1,6 @@
+include: package:lints/recommended.yaml
+
+linter:
+  rules:
+    # Os arquivos têm nomes em CamelCase (Evento.dart etc.); mantemos assim.
+    file_names: false
