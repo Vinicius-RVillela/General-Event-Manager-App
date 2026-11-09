@@ -1,33 +1,100 @@
 import 'HistoricoEvento.dart';
 import 'Mesa.dart';
+import 'Registro.dart';
 import 'usuario.dart' show normalizar;
 import 'validacao.dart';
 
-/// Espelho da tabela evento, com seu histórico e sua mesa padrão.
-class Evento {
-  int? idBanco;
-  String nomeEvento;
-  DateTime dataEvento;
-  String descricao;
-  String? localEvento;
-  String tipodeevento;
-  String? nomeOrganizador; // quem criou o evento (para exibição)
-  HistoricoEvento? historicoEvento;
-  Mesa? mesaPadrao;
+String _textoObrigatorio(String valor, String campo) {
+  final limpo = valor.trim();
+  if (limpo.isEmpty) {
+    throw ArgumentError('O $campo não pode ficar vazio.');
+  }
+  return limpo;
+}
+
+class Evento extends Registro {
+  String _nomeEvento;
+  DateTime _dataEvento;
+  String _descricao;
+  String? _localEvento;
+  String _tipodeevento;
+  String? _nomeOrganizador;
+  HistoricoEvento? _historicoEvento;
+  Mesa? _mesaPadrao;
 
   Evento({
-    this.idBanco,
-    required this.nomeEvento,
-    required this.dataEvento,
-    required this.descricao,
-    this.localEvento,
-    required this.tipodeevento,
-    this.nomeOrganizador,
-    this.historicoEvento,
-    this.mesaPadrao,
-  });
+    super.idBanco,
+    required String nomeEvento,
+    required DateTime dataEvento,
+    required String descricao,
+    String? localEvento,
+    required String tipodeevento,
+    String? nomeOrganizador,
+    HistoricoEvento? historicoEvento,
+    Mesa? mesaPadrao,
+  })  : _nomeEvento = _textoObrigatorio(nomeEvento, 'nome do evento'),
+        _dataEvento = dataEvento,
+        _descricao = descricao.trim(),
+        _localEvento = localEvento?.trim(),
+        _tipodeevento = _textoObrigatorio(tipodeevento, 'tipo do evento'),
+        _nomeOrganizador = nomeOrganizador,
+        _historicoEvento = historicoEvento,
+        _mesaPadrao = mesaPadrao;
 
-  /// Pergunta os dados do evento no terminal e devolve um Evento ainda NÃO salvo.
+  Evento.doBanco({
+    required int idBanco,
+    required String nomeEvento,
+    required DateTime dataEvento,
+    required String descricao,
+    String? localEvento,
+    required String tipodeevento,
+    String? nomeOrganizador,
+    HistoricoEvento? historicoEvento,
+    Mesa? mesaPadrao,
+  }) : this(
+          idBanco: idBanco,
+          nomeEvento: nomeEvento,
+          dataEvento: dataEvento,
+          descricao: descricao,
+          localEvento: localEvento,
+          tipodeevento: tipodeevento,
+          nomeOrganizador: nomeOrganizador,
+          historicoEvento: historicoEvento,
+          mesaPadrao: mesaPadrao,
+        );
+
+  String get nomeEvento => _nomeEvento;
+
+  set nomeEvento(String valor) => _nomeEvento = _textoObrigatorio(valor, 'nome do evento');
+
+  DateTime get dataEvento => _dataEvento;
+
+  set dataEvento(DateTime valor) => _dataEvento = valor;
+
+  String get descricao => _descricao;
+
+  set descricao(String valor) => _descricao = valor.trim();
+
+  String? get localEvento => _localEvento;
+
+  set localEvento(String? valor) => _localEvento = valor?.trim();
+
+  String get tipodeevento => _tipodeevento;
+
+  set tipodeevento(String valor) => _tipodeevento = _textoObrigatorio(valor, 'tipo do evento');
+
+  String? get nomeOrganizador => _nomeOrganizador;
+
+  set nomeOrganizador(String? valor) => _nomeOrganizador = valor;
+
+  HistoricoEvento? get historicoEvento => _historicoEvento;
+
+  set historicoEvento(HistoricoEvento? valor) => _historicoEvento = valor;
+
+  Mesa? get mesaPadrao => _mesaPadrao;
+
+  set mesaPadrao(Mesa? valor) => _mesaPadrao = valor;
+
   static Evento lerDoTerminal(String tipo) {
     final nome = lerTextoNaoVazio('Digite o nome do evento: ');
     final data = lerDataValida('Digite a data do evento (dd/mm/aaaa): ');
@@ -42,15 +109,14 @@ class Evento {
     );
   }
 
-  String obterDadosEvento() {
+  @override
+  String obterDados() {
     return 'ID: $idBanco | Nome: $nomeEvento | Tipo: $tipodeevento | '
         'Data: ${formatarData(dataEvento)} | Local: ${localEvento ?? '-'} | '
         'Organizador: ${nomeOrganizador ?? '-'} | Descrição: $descricao';
   }
 }
 
-// Tipos de evento: o padrão vem fixo; os criados pelo usuário e os que já
-// existem no banco (coluna tipo_evento) são somados à lista.
 final List<String> _tiposEvento = [
   'Casamento',
   'Evento Corporativo',
@@ -59,13 +125,11 @@ final List<String> _tiposEvento = [
 
 List<String> obterTiposEventoDisponiveis() => List.unmodifiable(_tiposEvento);
 
-/// Adiciona um tipo vindo do banco à lista, sem duplicar.
 void registrarTipoEvento(String tipo) {
   final existe = _tiposEvento.any((t) => normalizar(t) == normalizar(tipo));
   if (!existe) _tiposEvento.add(tipo);
 }
 
-/// Pergunta o nome de um novo tipo. Se já existir, reaproveita o existente.
 String criarTipoEvento() {
   String nome = lerTextoNaoVazio('Digite o nome do novo tipo de evento: ');
 
@@ -81,7 +145,6 @@ String criarTipoEvento() {
   return nome;
 }
 
-/// Mostra o menu de tipos e devolve o escolhido. Null se o usuário sair.
 String? escolherTipoEvento() {
   while (true) {
     List<String> tipos = obterTiposEventoDisponiveis();

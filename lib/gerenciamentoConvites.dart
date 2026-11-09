@@ -5,7 +5,6 @@ import 'convidado.dart';
 import 'Evento.dart';
 import 'validacao.dart';
 
-/// Convites do evento ativo. Cada ação grava no banco antes de entrar na memória.
 Future<void> gerenciarConvites(
   List<Convidado> convidados,
   List<Convite> convites,

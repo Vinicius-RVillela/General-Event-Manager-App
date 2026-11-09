@@ -1,7 +1,7 @@
 import 'Evento.dart';
+import 'Registro.dart';
 import 'convidado.dart';
 
-/// Status do convite. Os nomes batem com o ENUM do banco.
 enum StatusConfirmacao { pendente, confirmado, recusado }
 
 StatusConfirmacao statusDeTexto(String texto) {
@@ -11,22 +11,37 @@ StatusConfirmacao statusDeTexto(String texto) {
   return StatusConfirmacao.pendente;
 }
 
-/// Espelho da tabela convite.
-class Convite {
-  int? idBanco;
-  StatusConfirmacao status;
-  final Evento evento;
-  final Convidado convidado;
+class Convite extends Registro {
+  StatusConfirmacao _status;
+  final Evento _evento;
+  final Convidado _convidado;
 
   Convite({
-    this.idBanco,
-    this.status = StatusConfirmacao.pendente,
-    required this.evento,
-    required this.convidado,
-  });
+    super.idBanco,
+    StatusConfirmacao status = StatusConfirmacao.pendente,
+    required Evento evento,
+    required Convidado convidado,
+  })  : _status = status,
+        _evento = evento,
+        _convidado = convidado;
+
+  Convite.doBanco({
+    required int idBanco,
+    required StatusConfirmacao status,
+    required Evento evento,
+    required Convidado convidado,
+  }) : this(idBanco: idBanco, status: status, evento: evento, convidado: convidado);
+
+  StatusConfirmacao get status => _status;
+
+  set status(StatusConfirmacao valor) => _status = valor;
+
+  Evento get evento => _evento;
+
+  Convidado get convidado => _convidado;
 
   String get statusTexto {
-    switch (status) {
+    switch (_status) {
       case StatusConfirmacao.pendente:
         return 'Pendente';
       case StatusConfirmacao.confirmado:
@@ -36,8 +51,9 @@ class Convite {
     }
   }
 
+  @override
   String obterDados() {
-    return 'Convite #$idBanco | Convidado: ${convidado.nome} | '
-        'Evento: ${evento.nomeEvento} | Status: $statusTexto';
+    return 'Convite #$idBanco | Convidado: ${_convidado.nome} | '
+        'Evento: ${_evento.nomeEvento} | Status: $statusTexto';
   }
 }

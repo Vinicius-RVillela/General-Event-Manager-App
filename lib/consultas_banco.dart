@@ -1,7 +1,6 @@
 import 'banco.dart';
 import 'validacao.dart';
 
-/// Menu de consulta somente leitura às tabelas do banco.
 Future<void> consultarBanco() async {
   final tabelas = consultasLeitura.keys.toList();
 

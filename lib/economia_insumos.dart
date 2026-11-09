@@ -2,12 +2,10 @@ import 'Checkin.dart';
 import 'Convite.dart';
 import 'Evento.dart';
 
-/// Valores da planilha (aba RelatorioPosEvento). Ajuste aqui se mudar a base.
-const double consumoPorPessoaKg = 0.4; // ConsumoMedioPorPessoaKg
-const double margemPlanejamento = 0.15; // MargemPlanejamento
-const double custoPorKg = 45.0; // CustoPorKg
+const double consumoPorPessoaKg = 0.4;
+const double margemPlanejamento = 0.15;
+const double custoPorKg = 45.0;
 
-/// Resultado do cálculo de insumos (comida) de um evento.
 class EconomiaInsumos {
   final int cadastrados;
   final int confirmados;
@@ -34,9 +32,6 @@ class EconomiaInsumos {
   });
 }
 
-/// Calcula a economia de insumos do evento, pelas mesmas fórmulas da planilha:
-/// planejado = pessoas × consumo × (1 + margem)
-/// Economia = planejar com TODOS os cadastrados menos planejar só com os CONFIRMADOS.
 EconomiaInsumos calcularEconomiaInsumos(
   Evento evento,
   List<Convite> convites,
@@ -70,7 +65,6 @@ EconomiaInsumos calcularEconomiaInsumos(
   );
 }
 
-/// Mostra a economia de insumos do evento no terminal.
 void mostrarEconomiaInsumos(
   Evento evento,
   List<Convite> convites,

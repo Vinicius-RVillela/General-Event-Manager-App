@@ -6,20 +6,17 @@ import 'seguranca.dart';
 import 'usuario.dart';
 import 'validacao.dart';
 
-/// Regras do login (ajuste aqui se quiser):
 const int tentativasIniciais = 3;
 const int tentativasAposEspera = 2;
 const int esperaSegundos = 60;
 const int minimoCaracteresSenha = 6;
 
-/// Lê a senha sem mostrar o que está sendo digitado.
 String lerSenhaOculta() {
   bool ocultou = false;
   try {
     stdin.echoMode = false;
     ocultou = true;
   } catch (_) {
-    // Terminal que não permite ocultar: lê normalmente.
   }
   final senha = lerLinha();
   if (ocultou) {
@@ -31,7 +28,6 @@ String lerSenhaOculta() {
   return senha;
 }
 
-/// Aceita o email normal ou o usuário especial "admin".
 String lerEmailOuAdmin(String mensagem) {
   while (true) {
     print(mensagem);
@@ -41,11 +37,6 @@ String lerEmailOuAdmin(String mensagem) {
   }
 }
 
-/// Fluxo completo de login. Só ENTRA quem existir no banco com nome, email e
-/// senha corretos. Nada é criado aqui: login só verifica e registra o acesso.
-///
-/// Ordem: 3 tentativas -> bloqueio de 1 minuto -> 2 tentativas
-/// -> "esqueci a senha" (troca a senha do mesmo cadastro) -> volta ao login.
 Future<Organizador?> executarLogin() async {
   while (true) {
     var org = await _rodada(tentativasIniciais, aplicarEspera: true);
@@ -67,7 +58,6 @@ Future<Organizador?> executarLogin() async {
   }
 }
 
-/// Uma rodada de tentativas. Devolve o organizador ao acertar, ou null.
 Future<Organizador?> _rodada(int quantidade, {required bool aplicarEspera}) async {
   for (int i = 1; i <= quantidade; i++) {
     print('\nTentativa $i de $quantidade');
@@ -76,7 +66,6 @@ Future<Organizador?> _rodada(int quantidade, {required bool aplicarEspera}) asyn
     print('Digite sua senha: ');
     final senha = lerSenhaOculta();
 
-    // Se o email estiver bloqueado (até por outra execução), espera o tempo real que falta.
     final restante = await banco.segundosDeBloqueio(email);
     if (restante > 0) {
       print('Acesso bloqueado temporariamente. Aguarde $restante segundos.');
@@ -107,7 +96,6 @@ Future<Organizador?> _rodada(int quantidade, {required bool aplicarEspera}) asyn
   return null;
 }
 
-/// Espera de verdade, mostrando a contagem a cada 15 segundos.
 Future<void> _esperar(int segundos) async {
   for (int restante = segundos; restante > 0; restante--) {
     await Future.delayed(const Duration(seconds: 1));
@@ -117,7 +105,6 @@ Future<void> _esperar(int segundos) async {
   }
 }
 
-/// Confere nome, email e senha contra o banco.
 Future<Organizador?> _verificar(String nome, String email, String senha) async {
   final linha = await banco.buscarOrganizadorPorEmail(email);
   if (linha == null) return null;
@@ -129,9 +116,6 @@ Future<Organizador?> _verificar(String nome, String email, String senha) async {
   return _paraOrganizador(linha);
 }
 
-/// Esqueci a senha: confere nome e email do cadastro e troca só a senha
-/// desse mesmo registro. Nunca cria um usuário novo.
-/// Devolve true se a senha foi trocada, false se o usuário desistiu.
 Future<bool> _esqueciASenha() async {
   print('\n=== Esqueci minha senha ===');
   print('Para trocar a senha, confirme o nome e o email do cadastro.');
@@ -153,7 +137,6 @@ Future<bool> _esqueciASenha() async {
   return true;
 }
 
-/// Pede a nova senha duas vezes até as duas coincidirem e terem tamanho mínimo.
 String _lerNovaSenha() {
   while (true) {
     print('Digite a nova senha (mínimo $minimoCaracteresSenha caracteres): ');
@@ -184,10 +167,10 @@ bool _nomeConfere(String? nomeBanco, String nomeDigitado) {
 }
 
 Organizador _paraOrganizador(Map<String, String?> linha) {
-  return Organizador(
+  return Organizador.doBanco(
     idBanco: int.parse(linha['id']!),
-    nome: linha['nome'],
-    email: linha['email'],
+    nome: linha['nome'] ?? '',
+    email: linha['email'] ?? '',
     telefone: linha['telefone'],
   );
 }

@@ -5,15 +5,11 @@ import 'Evento.dart';
 import 'estatisticas_evento.dart';
 import 'validacao.dart';
 
-/// Estatísticas do evento ANTES do último "refazer check-ins".
-/// Fica só na memória desta execução; o banco guarda sempre o estado atual.
 final Map<Evento, EstatisticasEvento> _antesDoRecheckin = {};
 
-/// Estatísticas que existiam antes do último refazer, se houver nesta sessão.
 EstatisticasEvento? estatisticasAntesDoRecheckin(Evento evento) =>
     _antesDoRecheckin[evento];
 
-/// Check-in: só para convites CONFIRMADOS do evento ativo, uma vez por convite.
 Future<void> gerenciarCheckin(
   List<Convite> convites,
   List<Checkin> checkins,

@@ -1,7 +1,5 @@
 import 'dart:io';
 
-/// Lê uma linha do terminal. Se a entrada for fechada (Ctrl+D / fim do stdin),
-/// encerra o programa em vez de ficar repetindo perguntas para sempre.
 String lerLinha() {
   final linha = stdin.readLineSync();
   if (linha == null) {
@@ -11,13 +9,11 @@ String lerLinha() {
   return linha;
 }
 
-/// Verifica se um nome é válido: não vazio e dentro de um tamanho razoável.
 bool nomeValido(String nome) {
   final texto = nome.trim();
   return texto.isNotEmpty && texto.length <= 100;
 }
 
-/// Verifica se um CPF é válido, incluindo os dígitos verificadores.
 bool cpfValido(String cpf) {
   final digitos = cpf.replaceAll(RegExp(r'[^0-9]'), '');
 
@@ -41,19 +37,16 @@ bool cpfValido(String cpf) {
   return primeiroDigito == nums[9] && segundoDigito == nums[10];
 }
 
-/// Verifica se o email tem um formato básico (ex: nome@dominio.com).
 bool emailValido(String email) {
   return RegExp(r'^[\w.+-]+@[\w-]+(\.[\w-]+)+$').hasMatch(email.trim());
 }
 
-/// Verifica se dia/mês/ano formam uma data que realmente existe.
 bool dataValida(int dia, int mes, int ano) {
   if (ano < 1900 || ano > 2200 || mes < 1 || mes > 12 || dia < 1) return false;
   final data = DateTime(ano, mes, dia);
   return data.year == ano && data.month == mes && data.day == dia;
 }
 
-/// Converte um texto "dd/mm/aaaa" em DateTime. Devolve null se for inválido.
 DateTime? converterData(String texto) {
   final partes = texto.trim().split('/');
   if (partes.length != 3) return null;
@@ -69,17 +62,14 @@ DateTime? converterData(String texto) {
 
 String _doisDigitos(int n) => n.toString().padLeft(2, '0');
 
-/// Mostra uma data no formato brasileiro dd/mm/aaaa.
 String formatarData(DateTime? data) {
   if (data == null) return 'não informada';
   return '${_doisDigitos(data.day)}/${_doisDigitos(data.month)}/${data.year}';
 }
 
-/// Mostra data e hora no formato dd/mm/aaaa HH:MM.
 String formatarDataHora(DateTime data) =>
     '${formatarData(data)} ${_doisDigitos(data.hour)}:${_doisDigitos(data.minute)}';
 
-/// Pergunta o nome repetidamente até receber um valor válido.
 String lerNomeValido(String mensagem) {
   while (true) {
     print(mensagem);
@@ -89,7 +79,6 @@ String lerNomeValido(String mensagem) {
   }
 }
 
-/// Pergunta o CPF repetidamente até receber um valor válido.
 String lerCpfValido(String mensagem) {
   while (true) {
     print(mensagem);
@@ -99,7 +88,6 @@ String lerCpfValido(String mensagem) {
   }
 }
 
-/// Pergunta o email repetidamente até receber um valor válido.
 String lerEmailValido(String mensagem) {
   while (true) {
     print(mensagem);
@@ -109,7 +97,6 @@ String lerEmailValido(String mensagem) {
   }
 }
 
-/// Pergunta a data repetidamente até receber uma data real no formato dd/mm/aaaa.
 DateTime lerDataValida(String mensagem) {
   while (true) {
     print(mensagem);
@@ -119,7 +106,6 @@ DateTime lerDataValida(String mensagem) {
   }
 }
 
-/// Pergunta um texto repetidamente até receber algo que não seja vazio.
 String lerTextoNaoVazio(String mensagem) {
   while (true) {
     print(mensagem);
@@ -129,7 +115,6 @@ String lerTextoNaoVazio(String mensagem) {
   }
 }
 
-/// Pergunta um texto opcional: Enter em branco devolve null.
 String? lerTextoOpcional(String mensagem) {
   print(mensagem);
   final entrada = lerLinha().trim();

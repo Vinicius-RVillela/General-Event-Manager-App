@@ -23,18 +23,25 @@ Future<void> main() async {
     final org = await executarLogin();
     if (org == null) return;
 
-    // Carrega do banco tudo que existe (de todos os organizadores).
     final dados = await banco.carregarTudo();
     final eventos = dados.eventos;
     final convidados = dados.convidados;
     final convites = dados.convites;
     final checkins = dados.checkins;
-    org.eventoGerenciado = eventos.isNotEmpty ? eventos.first : null;
+
+    // CORREÇÃO: começa sem evento ativo; o organizador escolhe na opção 6.
+    org.eventoGerenciado = null;
 
     bool continuar = true;
     while (continuar) {
       print('\n=== MENU PRINCIPAL ===');
-      print('Organizador: ${org.nome} | Evento ativo: ${org.eventoGerenciado?.nomeEvento ?? 'nenhum'}');
+      final eventoMenu = org.eventoGerenciado;
+      if (eventoMenu == null) {
+        print('Organizador: ${org.nome}');
+        print('Nenhum evento está selecionado neste usuário para gerenciamento, escolha um.');
+      } else {
+        print('Organizador: ${org.nome} | Evento ativo: ${eventoMenu.nomeEvento}');
+      }
       print('1 - Gerenciar convidados');
       print('2 - Gerenciar convites');
       print('3 - Gerenciar check-in');
@@ -76,7 +83,20 @@ Future<void> main() async {
         case '5':
           final eventoAtivo = org.eventoGerenciado;
           if (eventoAtivo == null) {
-            print('Nenhum evento ativo. Crie ou escolha um evento na opção 6.');
+            print('Nenhum evento ativo. Mostrando as estatísticas gerais e de cada evento.');
+            _imprimirEstatisticas(
+              'Estatísticas gerais (todos os eventos)',
+              calcularEstatisticas(convites, checkins),
+            );
+            for (final ev in eventos) {
+              final convitesEv = convites.where((c) => c.evento == ev).toList();
+              final checkinsEv =
+                  checkins.where((chk) => chk.convite.evento == ev).toList();
+              _imprimirEstatisticas(
+                'Estatísticas de ${ev.nomeEvento}',
+                calcularEstatisticas(convitesEv, checkinsEv),
+              );
+            }
             break;
           }
           final convitesDoEvento = convites.where((c) => c.evento == eventoAtivo).toList();
@@ -89,7 +109,7 @@ Future<void> main() async {
           break;
 
         case '6':
-          await gerenciarEventos(org, eventos);
+          await gerenciarEventos(org, eventos, convites, checkins);
           break;
 
         case '7':

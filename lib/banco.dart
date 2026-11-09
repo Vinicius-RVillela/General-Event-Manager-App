@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:mysql_client/mysql_client.dart';
 
 import 'Checkin.dart';
@@ -8,17 +11,32 @@ import 'Organizador.dart';
 import 'Evento.dart';
 import 'convidado.dart';
 
-/// Dados de conexão com o MySQL. AJUSTE PARA O SEU AMBIENTE.
 class ConfigBanco {
-  static const String host = 'localhost';
-  static const int port = 3306;
-  static const String usuario = 'root';
-  static const String senha = 'suasenha';
-  static const String nomeBanco = 'mydb';
+  static String host = 'localhost';
+  static int port = 3306;
+  static String usuario = 'root';
+  static String senha = 'root';
+  static String nomeBanco = 'mydb';
+
+  static void carregar() {
+    final arquivo = File('config.json');
+    if (arquivo.existsSync()) {
+      final json = jsonDecode(arquivo.readAsStringSync()) as Map<String, dynamic>;
+      host = json['host']?.toString() ?? host;
+      port = int.tryParse('${json['port'] ?? ''}') ?? port;
+      usuario = json['usuario']?.toString() ?? usuario;
+      senha = json['senha']?.toString() ?? senha;
+      nomeBanco = json['nomeBanco']?.toString() ?? nomeBanco;
+    }
+    final env = Platform.environment;
+    host = env['DB_HOST'] ?? host;
+    port = int.tryParse(env['DB_PORT'] ?? '') ?? port;
+    usuario = env['DB_USER'] ?? usuario;
+    senha = env['DB_PASSWORD'] ?? senha;
+    nomeBanco = env['DB_NAME'] ?? nomeBanco;
+  }
 }
 
-/// Consultas de leitura liberadas no menu "Consultar banco".
-/// Só estas tabelas podem ser lidas. Senhas nunca são mostradas.
 const Map<String, String> consultasLeitura = {
   'organizador':
       'SELECT id_organizador AS id, nome, email, telefone, ativo FROM organizador ORDER BY id_organizador',
@@ -50,10 +68,8 @@ const Map<String, String> consultasLeitura = {
       'FROM sessao_login ORDER BY idsessao DESC LIMIT 200',
 };
 
-/// Instância única usada pelo programa inteiro.
 final BancoDeDados banco = BancoDeDados();
 
-/// Tudo que existe no banco, já em objetos.
 class DadosCarregados {
   final List<Evento> eventos;
   final List<Convidado> convidados;
@@ -71,9 +87,6 @@ class DadosCarregados {
 int _int(String? valor) => int.parse(valor!);
 int? _intOpt(String? valor) => valor == null ? null : int.parse(valor);
 
-/// Todas as conversas com o MySQL ficam aqui.
-/// Ações que gravam em mais de uma tabela usam transação: ou tudo é gravado,
-/// ou nada é — assim não sobra registro pela metade.
 class BancoDeDados {
   MySQLConnection? _conexao;
 
@@ -95,6 +108,10 @@ class BancoDeDados {
     _conexao = null;
   }
 
+  Future<void> ping() async {
+    await _conn.execute('SELECT 1');
+  }
+
   MySQLConnection get _conn {
     final c = _conexao;
     if (c == null) {
@@ -102,10 +119,6 @@ class BancoDeDados {
     }
     return c;
   }
-
-  // ---------------------------------------------------------------
-  // Auxiliares
-  // ---------------------------------------------------------------
 
   Future<T> _transacao<T>(Future<T> Function() operacao) async {
     await _executar('START TRANSACTION');
@@ -119,7 +132,6 @@ class BancoDeDados {
     }
   }
 
-  /// INSERT que devolve o id gerado pelo AUTO_INCREMENT.
   Future<int> _inserir(String sql, Map<String, dynamic> params) async {
     final resultado = await _conn.execute(sql, params);
     return resultado.lastInsertID.toInt();
@@ -133,7 +145,6 @@ class BancoDeDados {
     }
   }
 
-  /// SELECT que devolve as linhas como mapas (coluna -> texto).
   Future<List<Map<String, String?>>> _consultar(
     String sql,
     Map<String, dynamic> params,
@@ -142,7 +153,6 @@ class BancoDeDados {
     return resultado.rows.map((linha) => linha.assoc()).toList();
   }
 
-  /// Lê uma tabela da lista permitida. Nada digitado pelo usuário entra no SQL.
   Future<List<Map<String, String?>>> consultarTabela(String tabela) {
     final sql = consultasLeitura[tabela];
     if (sql == null) {
@@ -151,18 +161,12 @@ class BancoDeDados {
     return _consultar(sql, {});
   }
 
-  /// Converte DateTime para o formato DATETIME do MySQL.
   String _dataSql(DateTime d) {
     String dois(int n) => n.toString().padLeft(2, '0');
     return '${d.year}-${dois(d.month)}-${dois(d.day)} '
         '${dois(d.hour)}:${dois(d.minute)}:${dois(d.second)}';
   }
 
-  // ---------------------------------------------------------------
-  // LOGIN
-  // ---------------------------------------------------------------
-
-  /// Busca o organizador ativo pelo email. Null se não existir.
   Future<Map<String, String?>?> buscarOrganizadorPorEmail(String email) async {
     final linhas = await _consultar(
       'SELECT id_organizador AS id, nome, email, telefone, senha_hash '
@@ -172,8 +176,6 @@ class BancoDeDados {
     return linhas.isEmpty ? null : linhas.first;
   }
 
-  /// Quantos segundos faltam para o email poder tentar de novo (0 = liberado).
-  /// Apaga o bloqueio já vencido, para não acumular registros inúteis.
   Future<int> segundosDeBloqueio(String email) async {
     await _executar(
       'DELETE FROM bloqueio_login WHERE email = :email AND bloqueado_ate <= NOW()',
@@ -187,7 +189,6 @@ class BancoDeDados {
     return linhas.isEmpty ? 0 : _int(linhas.first['restante']);
   }
 
-  /// Bloqueia o email por [segundos], contados pelo relógio do próprio banco.
   Future<void> bloquearLogin(String email, int segundos) {
     return _transacao(() async {
       await _executar(
@@ -202,7 +203,6 @@ class BancoDeDados {
     });
   }
 
-  /// Remove o bloqueio após um login bem-sucedido.
   Future<void> liberarLogin(String email) {
     return _executar(
       'DELETE FROM bloqueio_login WHERE email = :email',
@@ -210,7 +210,6 @@ class BancoDeDados {
     );
   }
 
-  /// Registra toda tentativa de login (sucesso ou falha) no histórico.
   Future<void> registrarTentativa(
     String email, {
     required bool sucesso,
@@ -242,7 +241,6 @@ class BancoDeDados {
     );
   }
 
-  /// Substitui a senha do MESMO organizador (não cria usuário novo).
   Future<void> trocarSenha(int idOrganizador, String hash) {
     return _transacao(() async {
       await _executar(
@@ -262,7 +260,6 @@ class BancoDeDados {
     });
   }
 
-  /// Usado só pelo utilitário de cadastro (bin/cadastrar_usuario.dart).
   Future<int> cadastrarOrganizador({
     required String nome,
     required String email,
@@ -281,11 +278,6 @@ class BancoDeDados {
     );
   }
 
-  // ---------------------------------------------------------------
-  // EVENTO
-  // ---------------------------------------------------------------
-
-  /// Grava historico_evento, evento e a mesa padrão, tudo em uma transação.
   Future<void> salvarEventoCompleto(Organizador org, Evento evento) {
     return _transacao(() async {
       final idHistorico = await _inserir(
@@ -316,8 +308,6 @@ class BancoDeDados {
     });
   }
 
-  /// Cria a mesa "Geral" do evento, se ainda não existir.
-  /// A tabela convite exige uma mesa, então todo evento precisa dela.
   Future<void> garantirMesaPadrao(Evento evento) async {
     if (evento.mesaPadrao?.idBanco != null) return;
 
@@ -334,10 +324,6 @@ class BancoDeDados {
     evento.mesaPadrao = mesa;
   }
 
-  // ---------------------------------------------------------------
-  // CONVIDADO
-  // ---------------------------------------------------------------
-
   Future<void> salvarConvidado(Convidado convidado) async {
     convidado.idBanco = await _inserir(
       'INSERT INTO convidado (nome, email, telefone, idade, assento) '
@@ -352,7 +338,6 @@ class BancoDeDados {
     );
   }
 
-  /// Cadastra a pessoa e já a convida, em uma única transação.
   Future<void> cadastrarConvidadoEConvite(Convidado convidado, Convite convite) {
     return _transacao(() async {
       await salvarConvidado(convidado);
@@ -360,7 +345,6 @@ class BancoDeDados {
     });
   }
 
-  /// Remove o convidado com seus check-ins e convites, nessa ordem.
   Future<void> removerConvidado(Convidado convidado) {
     final id = convidado.idBanco;
     if (id == null) return Future.value();
@@ -381,10 +365,6 @@ class BancoDeDados {
       );
     });
   }
-
-  // ---------------------------------------------------------------
-  // CONVITE
-  // ---------------------------------------------------------------
 
   Future<void> salvarConvite(Convite convite) async {
     await garantirMesaPadrao(convite.evento);
@@ -411,10 +391,6 @@ class BancoDeDados {
     );
   }
 
-  // ---------------------------------------------------------------
-  // CHECK-IN
-  // ---------------------------------------------------------------
-
   Future<void> salvarCheckin(Checkin checkin) async {
     checkin.idBanco = await _inserir(
       'INSERT INTO checkin (data_hora, presente, convite_idconvite) '
@@ -427,13 +403,6 @@ class BancoDeDados {
     );
   }
 
-  // ---------------------------------------------------------------
-  // HISTÓRICO
-  // ---------------------------------------------------------------
-
-  /// Recalcula os números do evento e grava em historico_evento.
-  /// Taxa = % dos CONFIRMADOS que fizeram check-in (mesma conta da tela de estatísticas).
-  /// Se falhar, só avisa: o histórico não deve derrubar a operação principal.
   Future<void> sincronizarHistorico(
     Evento evento,
     List<Convite> convites,
@@ -472,14 +441,7 @@ class BancoDeDados {
     }
   }
 
-  // ---------------------------------------------------------------
-  // CARREGAR TUDO AO ABRIR O PROGRAMA
-  // ---------------------------------------------------------------
-
-  /// Lê do banco TUDO que existe, de todos os organizadores.
-  /// Assim qualquer organizador vê os mesmos eventos, convidados, convites e check-ins.
   Future<DadosCarregados> carregarTudo() async {
-    // Convidados
     final convidados = <Convidado>[];
     final convidadosPorId = <int, Convidado>{};
     final linhasConvidados = await _consultar(
@@ -488,10 +450,10 @@ class BancoDeDados {
       {},
     );
     for (final l in linhasConvidados) {
-      final c = Convidado(
+      final c = Convidado.doBanco(
         idBanco: _int(l['id']),
-        nome: l['nome'],
-        email: l['email'],
+        nome: l['nome'] ?? '',
+        email: l['email'] ?? '',
         telefone: l['telefone'],
         idade: _intOpt(l['idade']),
         assento: l['assento'],
@@ -500,7 +462,6 @@ class BancoDeDados {
       convidadosPorId[c.idBanco!] = c;
     }
 
-    // Eventos de todos os organizadores, com nome do organizador, histórico e mesa padrão.
     final eventos = <Evento>[];
     final eventosPorId = <int, Evento>{};
     final linhasEventos = await _consultar(
@@ -519,9 +480,9 @@ class BancoDeDados {
     );
     for (final l in linhasEventos) {
       final id = _int(l['id']);
-      if (eventosPorId.containsKey(id)) continue; // mesa duplicada não repete evento
+      if (eventosPorId.containsKey(id)) continue;
       final tipo = l['tipo'] ?? 'Sem tipo';
-      final evento = Evento(
+      final evento = Evento.doBanco(
         idBanco: id,
         nomeEvento: l['nome'] ?? '',
         dataEvento: DateTime.parse(l['data']!),
@@ -548,7 +509,6 @@ class BancoDeDados {
       registrarTipoEvento(tipo);
     }
 
-    // Convites de todos os eventos.
     final convites = <Convite>[];
     final convitesPorId = <int, Convite>{};
     final linhasConvites = await _consultar(
@@ -561,7 +521,7 @@ class BancoDeDados {
       final evento = eventosPorId[_int(l['evento'])];
       final convidado = convidadosPorId[_int(l['convidado'])];
       if (evento == null || convidado == null) continue;
-      final convite = Convite(
+      final convite = Convite.doBanco(
         idBanco: _int(l['id']),
         status: statusDeTexto(l['status'] ?? 'pendente'),
         evento: evento,
@@ -571,7 +531,6 @@ class BancoDeDados {
       convitesPorId[convite.idBanco!] = convite;
     }
 
-    // Check-ins de todos os convites.
     final checkins = <Checkin>[];
     final linhasCheckins = await _consultar(
       'SELECT ch.idcheckin AS id, ch.data_hora AS data, ch.presente AS presente, '
@@ -581,7 +540,7 @@ class BancoDeDados {
     for (final l in linhasCheckins) {
       final convite = convitesPorId[_int(l['convite'])];
       if (convite == null) continue;
-      checkins.add(Checkin(
+      checkins.add(Checkin.doBanco(
         idBanco: _int(l['id']),
         dataHora: DateTime.parse(l['data']!),
         presente: l['presente'] == '1',
@@ -597,12 +556,6 @@ class BancoDeDados {
     );
   }
 
-  // ---------------------------------------------------------------
-  // EDIÇÃO DE CONVIDADO (mantém convites e check-ins)
-  // ---------------------------------------------------------------
-
-  /// Atualiza os dados de um convidado existente.
-  /// Convites e check-ins continuam ligados ao mesmo registro.
   Future<void> atualizarConvidado(Convidado c) {
     return _executar(
       'UPDATE convidado SET nome = :nome, email = :email, telefone = :telefone, '
@@ -618,12 +571,6 @@ class BancoDeDados {
     );
   }
 
-  // ---------------------------------------------------------------
-  // REFAZER CHECK-IN
-  // ---------------------------------------------------------------
-
-  /// Apaga os check-ins de um evento. Convites continuam confirmados,
-  /// então o check-in pode ser feito de novo.
   Future<void> apagarCheckinsDoEvento(Evento evento) {
     return _executar(
       'DELETE FROM checkin WHERE convite_idconvite IN '
@@ -632,12 +579,50 @@ class BancoDeDados {
     );
   }
 
-  // ---------------------------------------------------------------
-  // EXIBIR EVENTO COMPLETO (todas as colunas, tabela por tabela)
-  // ---------------------------------------------------------------
+  Future<void> excluirEvento(Evento evento) {
+    final id = evento.idBanco;
+    if (id == null) return Future.value();
 
-  /// Lê todas as colunas das tabelas ligadas a um evento.
-  /// Chaves: evento, historico, mesas, convites, checkins.
+    return _transacao(() async {
+      final linhas = await _consultar(
+        'SELECT historico_evento_idhistorico_evento AS h FROM evento '
+        'WHERE idevento = :id',
+        {'id': id},
+      );
+      final idHistorico = linhas.isEmpty ? null : _intOpt(linhas.first['h']);
+
+      await _executar(
+        'DELETE FROM checkin WHERE convite_idconvite IN '
+        '(SELECT idconvite FROM convite WHERE evento_idevento = :id)',
+        {'id': id},
+      );
+      await _executar(
+        'DELETE FROM convite WHERE evento_idevento = :id',
+        {'id': id},
+      );
+      await _executar(
+        'DELETE FROM calculo_especializado WHERE evento_idevento = :id',
+        {'id': id},
+      );
+      await _executar(
+        'DELETE FROM mesa WHERE evento_idevento = :id',
+        {'id': id},
+      );
+      await _executar(
+        'DELETE FROM evento WHERE idevento = :id',
+        {'id': id},
+      );
+      if (idHistorico != null) {
+        await _executar(
+          'DELETE FROM historico_evento WHERE idhistorico_evento = :h '
+          'AND NOT EXISTS (SELECT 1 FROM evento '
+          'WHERE historico_evento_idhistorico_evento = :h2)',
+          {'h': idHistorico, 'h2': idHistorico},
+        );
+      }
+    });
+  }
+
   Future<Map<String, List<Map<String, String?>>>> buscarDetalhesEvento(
     int idEvento,
   ) async {

@@ -3,3 +3,4 @@ build/
 .packages
 .env
 *.log
+config.json

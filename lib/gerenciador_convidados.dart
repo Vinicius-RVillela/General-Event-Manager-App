@@ -4,7 +4,6 @@ import 'Convite.dart';
 import 'convidado.dart';
 import 'validacao.dart';
 
-/// Menu de convidados. Cadastrar, editar e remover gravam no banco.
 Future<void> gerenciarConvidados(
   List<Convidado> convidados,
   List<Convite> convites,
@@ -64,7 +63,6 @@ Future<void> gerenciarConvidados(
           break;
         }
 
-        // Eventos que perdem convites com essa remoção, para recalcular o histórico.
         final afetados = convites
             .where((cv) => cv.convidado == alvo)
             .map((cv) => cv.evento)

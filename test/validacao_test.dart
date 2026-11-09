@@ -38,7 +38,6 @@ void main() {
 
   group('cpfValido — rejeita CPFs inválidos', () {
     test('CPF com dígito verificador errado é rejeitado', () {
-      // Mesmo número do CPF válido acima, mas com o último dígito trocado.
       expect(cpfValido('529.982.247-26'), false);
     });
 
@@ -55,8 +54,6 @@ void main() {
     });
 
     test('sequência repetida (111.111.111-11) é rejeitada', () {
-      // Tem 11 dígitos e passaria na conta dos verificadores,
-      // mas não é um CPF real — por isso tem checagem própria.
       expect(cpfValido('111.111.111-11'), false);
     });
 

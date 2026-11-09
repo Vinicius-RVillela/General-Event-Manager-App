@@ -3,14 +3,13 @@ import 'package:app_eventos/login.dart';
 import 'package:app_eventos/seguranca.dart';
 import 'package:app_eventos/validacao.dart';
 
-/// Utilitário para criar um organizador (acesso ao sistema).
-/// Rode no terminal:  dart run bin/cadastrar_usuario.dart
 Future<void> main() async {
   try {
+    ConfigBanco.carregar();
     await banco.conectar();
   } catch (e) {
     print('Não foi possível conectar ao MySQL: $e');
-    print('Confira ConfigBanco em lib/banco.dart (host, porta, usuário, senha, banco).');
+    print('Confira o backend/config.json (host, porta, usuário, senha, banco).');
     return;
   }
 

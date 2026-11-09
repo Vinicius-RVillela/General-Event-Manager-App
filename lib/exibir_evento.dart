@@ -2,7 +2,6 @@ import 'banco.dart';
 import 'Evento.dart';
 import 'validacao.dart';
 
-/// Lista os eventos e mostra TODAS as informações do escolhido, direto do banco.
 Future<void> exibirEventoPorEscolha(List<Evento> eventos, Evento? ativo) async {
   if (eventos.isEmpty) {
     print('Nenhum evento cadastrado.');
@@ -13,29 +12,39 @@ Future<void> exibirEventoPorEscolha(List<Evento> eventos, Evento? ativo) async {
     final marcador = identical(e, ativo) ? '*' : ' ';
     print('$marcador ${e.idBanco} - ${e.nomeEvento}');
   }
-  print('Digite o ID do evento (Enter para usar o evento ativo): ');
+
+  if (ativo == null) {
+    print('Digite o ID do evento: ');
+  } else {
+    print('Digite o ID do evento (Enter para usar o evento ativo): ');
+  }
   final entrada = lerLinha().trim();
 
   Evento? escolhido = ativo;
   if (entrada.isNotEmpty) {
     final id = int.tryParse(entrada);
     escolhido = null;
-    for (var e in eventos) {
-      if (e.idBanco == id) {
-        escolhido = e;
-        break;
+    if (id != null) {
+      for (var e in eventos) {
+        if (e.idBanco == id) {
+          escolhido = e;
+          break;
+        }
       }
     }
   }
 
   if (escolhido == null) {
-    print('Evento não encontrado.');
+    if (entrada.isEmpty) {
+      print('Nenhum evento ativo. Digite o ID de um evento da lista.');
+    } else {
+      print('Evento não encontrado.');
+    }
     return;
   }
   await exibirEventoCompleto(escolhido);
 }
 
-/// Mostra todas as colunas de cada tabela ligada ao evento.
 Future<void> exibirEventoCompleto(Evento evento) async {
   final id = evento.idBanco;
   if (id == null) {
