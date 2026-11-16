@@ -21,6 +21,7 @@ class Evento extends Registro {
   String? _nomeOrganizador;
   HistoricoEvento? _historicoEvento;
   Mesa? _mesaPadrao;
+  int? _limiteConvidados; // null = sem limite de vagas
 
   Evento({
     super.idBanco,
@@ -32,6 +33,7 @@ class Evento extends Registro {
     String? nomeOrganizador,
     HistoricoEvento? historicoEvento,
     Mesa? mesaPadrao,
+    int? limiteConvidados,
   })  : _nomeEvento = _textoObrigatorio(nomeEvento, 'nome do evento'),
         _dataEvento = dataEvento,
         _descricao = descricao.trim(),
@@ -39,7 +41,8 @@ class Evento extends Registro {
         _tipodeevento = _textoObrigatorio(tipodeevento, 'tipo do evento'),
         _nomeOrganizador = nomeOrganizador,
         _historicoEvento = historicoEvento,
-        _mesaPadrao = mesaPadrao;
+        _mesaPadrao = mesaPadrao,
+        _limiteConvidados = _limiteValido(limiteConvidados);
 
   Evento.doBanco({
     required int idBanco,
@@ -51,6 +54,7 @@ class Evento extends Registro {
     String? nomeOrganizador,
     HistoricoEvento? historicoEvento,
     Mesa? mesaPadrao,
+    int? limiteConvidados,
   }) : this(
           idBanco: idBanco,
           nomeEvento: nomeEvento,
@@ -61,6 +65,7 @@ class Evento extends Registro {
           nomeOrganizador: nomeOrganizador,
           historicoEvento: historicoEvento,
           mesaPadrao: mesaPadrao,
+          limiteConvidados: limiteConvidados,
         );
 
   String get nomeEvento => _nomeEvento;
@@ -94,6 +99,20 @@ class Evento extends Registro {
   Mesa? get mesaPadrao => _mesaPadrao;
 
   set mesaPadrao(Mesa? valor) => _mesaPadrao = valor;
+
+  /// Máximo de convites ativos (não recusados). null = evento sem limite.
+  /// Pode mudar quando o evento cresce: é só usar o setter.
+  int? get limiteConvidados => _limiteConvidados;
+
+  set limiteConvidados(int? valor) => _limiteConvidados = _limiteValido(valor);
+
+  /// O limite precisa ser pelo menos 1 (ou null, para "sem limite").
+  static int? _limiteValido(int? valor) {
+    if (valor != null && valor < 1) {
+      throw ArgumentError('O limite de convidados precisa ser pelo menos 1: $valor');
+    }
+    return valor;
+  }
 
   static Evento lerDoTerminal(String tipo) {
     final nome = lerTextoNaoVazio('Digite o nome do evento: ');

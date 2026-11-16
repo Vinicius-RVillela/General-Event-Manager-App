@@ -7,6 +7,7 @@ import 'package:app_eventos/gerenciador_convidados.dart';
 import 'package:app_eventos/gerenciamentoCheckin.dart';
 import 'package:app_eventos/gerenciamentoConvites.dart';
 import 'package:app_eventos/gerenciamentoEventos.dart';
+import 'package:app_eventos/gerenciamentoListaEspera.dart';
 import 'package:app_eventos/login.dart';
 import 'package:app_eventos/validacao.dart';
 
@@ -52,6 +53,7 @@ Future<void> main() async {
       print('8 - Exibir evento (todas as informações do banco)');
       print('9 - Ver estatística após novo check-in');
       print('10 - Economia de insumos (evento ativo)');
+      print('11 - Lista de espera e vagas (evento ativo)');
 
       String opcao = lerLinha().trim();
 
@@ -155,6 +157,15 @@ Future<void> main() async {
             break;
           }
           mostrarEconomiaInsumos(eventoAtivo, convites, checkins);
+          break;
+
+        case '11':
+          // Liberado para qualquer usuário logado: faz parte da organização do evento.
+          if (org.eventoGerenciado == null) {
+            print('Nenhum evento ativo. Crie ou escolha um evento na opção 6.');
+          } else {
+            await gerenciarListaEspera(convidados, convites, checkins, org.eventoGerenciado!);
+          }
           break;
 
         default:

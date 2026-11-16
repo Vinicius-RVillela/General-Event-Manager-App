@@ -21,7 +21,16 @@ Em `lib/banco.dart`, ajuste a classe `ConfigBanco` (host, porta, usuário, senha
 ## Menu principal
 1 convidados · 2 convites · 3 check-in (inclui refazer) · 4 sair · 5 estatísticas ·
 6 eventos · 7 consultar tabelas · 8 exibir evento completo · 9 estatística após novo check-in ·
-10 economia de insumos
+10 economia de insumos · 11 lista de espera e vagas
+
+## Lista de espera (menu 11, qualquer usuário logado)
+- Antes de usar, rode `sql/lista_espera.sql` (ou só `sql/trigger_reserva.sql`, se o resto já existe).
+- Limite de vagas por evento (pode ser alterado; 0 = sem limite).
+- Vagas calculadas no código (`lib/vagas_evento.dart`): convite ativo = não recusado.
+- Evento lotado: convidar coloca a pessoa na fila (fim da fila, por ordem de chegada).
+- Convite recusado: o código oferece a vaga ao 1º da fila.
+- Promover/remover grava o histórico em `historico_lista_espera` pelo código;
+  a trigger do banco só age para outros programas (`@historico_pelo_codigo`).
 
 ## Testes
 - `dart test`

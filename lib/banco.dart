@@ -9,6 +9,7 @@ import 'HistoricoEvento.dart';
 import 'Mesa.dart';
 import 'Organizador.dart';
 import 'Evento.dart';
+import 'ListaEspera.dart';
 import 'convidado.dart';
 
 class ConfigBanco {
@@ -66,6 +67,14 @@ const Map<String, String> consultasLeitura = {
   'sessao_login':
       'SELECT idsessao AS id, inicio, fim, usuario_id_usuario AS organizador '
       'FROM sessao_login ORDER BY idsessao DESC LIMIT 200',
+  'lista_espera':
+      'SELECT idlista_espera AS id, evento_idevento AS evento, '
+      'convidado_idconvidado AS convidado, posicao, criado_em '
+      'FROM lista_espera ORDER BY evento_idevento, posicao',
+  'historico_lista_espera':
+      'SELECT idhistorico_lista_espera AS id, evento_idevento AS evento, '
+      'convidado_idconvidado AS convidado, posicao, entrou_em, saiu_em, motivo '
+      'FROM historico_lista_espera ORDER BY saiu_em DESC LIMIT 200',
 };
 
 final BancoDeDados banco = BancoDeDados();
@@ -101,6 +110,10 @@ class BancoDeDados {
     );
     await conn.connect();
     _conexao = conn;
+    // Avisa a trigger tg_saiu_da_fila que ESTE programa grava o histórico da
+    // lista de espera sozinho. A variável vale só para esta conexão; outros
+    // programas (como o app com API) continuam com a trigger como reserva.
+    await conn.execute('SET @historico_pelo_codigo = 1');
   }
 
   Future<void> desconectar() async {
@@ -350,6 +363,8 @@ class BancoDeDados {
     if (id == null) return Future.value();
 
     return _transacao(() async {
+      // Se a pessoa estava em alguma fila, registra a saída antes de apagar.
+      await _tirarDaFilaEmMassa('convidado_idconvidado = :id', {'id': id});
       await _executar(
         'DELETE FROM checkin WHERE convite_idconvite IN '
         '(SELECT idconvite FROM convite WHERE convidado_idconvidado = :id)',
@@ -467,6 +482,7 @@ class BancoDeDados {
     final linhasEventos = await _consultar(
       'SELECT e.idevento AS id, e.nome AS nome, e.data_evento AS data, '
       'e.local_evento AS local, e.DESCRICAO AS descricao, e.tipo_evento AS tipo, '
+      'e.limite_convidados AS limite, '
       'o.nome AS organizador, '
       'h.idhistorico_evento AS idhistorico, h.total_convidados AS total_convidados, '
       'h.total_presentes AS total_presentes, h.taxa_comparecimento AS taxa, '
@@ -490,6 +506,7 @@ class BancoDeDados {
         localEvento: l['local'],
         tipodeevento: tipo,
         nomeOrganizador: l['organizador'],
+        limiteConvidados: _intOpt(l['limite']),
         historicoEvento: HistoricoEvento(
           idBanco: _int(l['idhistorico']),
           totalConvidados: _int(l['total_convidados']),
@@ -591,6 +608,9 @@ class BancoDeDados {
       );
       final idHistorico = linhas.isEmpty ? null : _intOpt(linhas.first['h']);
 
+      // A fila do evento sai junto, mas fica registrada no histórico.
+      await _tirarDaFilaEmMassa('evento_idevento = :id', {'id': id});
+
       await _executar(
         'DELETE FROM checkin WHERE convite_idconvite IN '
         '(SELECT idconvite FROM convite WHERE evento_idevento = :id)',
@@ -621,6 +641,134 @@ class BancoDeDados {
         );
       }
     });
+  }
+
+  // ---------------------------------------------------------------
+  // LISTA DE ESPERA (a regra fica no código; o banco só guarda)
+  // ---------------------------------------------------------------
+
+  /// Muda o limite de vagas do evento. null = sem limite.
+  Future<void> definirLimiteConvidados(Evento evento, int? limite) {
+    return _executar(
+      'UPDATE evento SET limite_convidados = :limite WHERE idevento = :id',
+      {'limite': limite, 'id': evento.idBanco},
+    );
+  }
+
+  /// Lê a fila de um evento, já em ordem. Monta os objetos usando os
+  /// convidados que o programa já tem na memória.
+  Future<List<ItemListaEspera>> carregarListaEspera(
+    Evento evento,
+    List<Convidado> convidados,
+  ) async {
+    final porId = {for (final c in convidados) c.idBanco: c};
+    final linhas = await _consultar(
+      'SELECT idlista_espera AS id, convidado_idconvidado AS convidado, posicao, criado_em '
+      'FROM lista_espera WHERE evento_idevento = :evento '
+      'ORDER BY posicao, idlista_espera',
+      {'evento': evento.idBanco},
+    );
+    final fila = <ItemListaEspera>[];
+    for (final l in linhas) {
+      final convidado = porId[_int(l['convidado'])];
+      if (convidado == null) continue;
+      fila.add(ItemListaEspera.doBanco(
+        idBanco: _int(l['id']),
+        evento: evento,
+        convidado: convidado,
+        posicao: _int(l['posicao']),
+        criadoEm: DateTime.parse(l['criado_em']!),
+      ));
+    }
+    return fila;
+  }
+
+  /// Grava uma pessoa nova no fim da fila (a posição já vem calculada pelo código).
+  Future<void> adicionarListaEspera(ItemListaEspera item) async {
+    item.idBanco = await _inserir(
+      'INSERT INTO lista_espera (evento_idevento, convidado_idconvidado, posicao, criado_em) '
+      'VALUES (:evento, :convidado, :posicao, :criado)',
+      {
+        'evento': item.evento.idBanco,
+        'convidado': item.convidado.idBanco,
+        'posicao': item.posicao,
+        'criado': _dataSql(item.criadoEm),
+      },
+    );
+  }
+
+  /// Tira a pessoa da fila (sem dar vaga): grava o histórico, apaga e
+  /// renumera quem estava atrás. Tudo numa transação.
+  Future<void> removerDaListaEspera(ItemListaEspera item, List<ItemListaEspera> restantes) {
+    return _transacao(() async {
+      await _saidaDaFila(item, MotivoSaidaFila.removido, restantes);
+    });
+  }
+
+  /// Dá a vaga para a pessoa: cria o convite, grava o histórico, tira da fila
+  /// e renumera o resto. Se qualquer passo falhar, nada é gravado (ROLLBACK).
+  Future<void> promoverDaListaEspera(
+    ItemListaEspera item,
+    Convite convite,
+    List<ItemListaEspera> restantes,
+  ) {
+    return _transacao(() async {
+      await salvarConvite(convite);
+      await _saidaDaFila(item, MotivoSaidaFila.promovido, restantes);
+    });
+  }
+
+  Future<void> _saidaDaFila(
+    ItemListaEspera item,
+    MotivoSaidaFila motivo,
+    List<ItemListaEspera> restantes,
+  ) async {
+    await _executar(
+      'INSERT INTO historico_lista_espera '
+      '(evento_idevento, convidado_idconvidado, posicao, entrou_em, saiu_em, motivo) '
+      'VALUES (:evento, :convidado, :posicao, :entrou, NOW(), :motivo)',
+      {
+        'evento': item.evento.idBanco,
+        'convidado': item.convidado.idBanco,
+        'posicao': item.posicao,
+        'entrou': _dataSql(item.criadoEm),
+        'motivo': motivo.name,
+      },
+    );
+    await _executar(
+      'DELETE FROM lista_espera WHERE idlista_espera = :id',
+      {'id': item.idBanco},
+    );
+    for (final r in restantes) {
+      await _executar(
+        'UPDATE lista_espera SET posicao = :posicao WHERE idlista_espera = :id',
+        {'posicao': r.posicao, 'id': r.idBanco},
+      );
+    }
+  }
+
+  /// Tira da fila várias pessoas de uma vez (quando um convidado ou um evento é
+  /// apagado), registrando todas no histórico como "removido".
+  Future<void> _tirarDaFilaEmMassa(String condicao, Map<String, dynamic> params) async {
+    await _executar(
+      'INSERT INTO historico_lista_espera '
+      '(evento_idevento, convidado_idconvidado, posicao, entrou_em, saiu_em, motivo) '
+      "SELECT evento_idevento, convidado_idconvidado, posicao, criado_em, NOW(), 'removido' "
+      'FROM lista_espera WHERE $condicao',
+      params,
+    );
+    await _executar('DELETE FROM lista_espera WHERE $condicao', params);
+  }
+
+  /// Quem já passou pela fila deste evento, do mais recente para o mais antigo.
+  Future<List<Map<String, String?>>> historicoListaEspera(Evento evento) {
+    return _consultar(
+      'SELECT h.saiu_em, h.posicao, h.motivo, c.nome '
+      'FROM historico_lista_espera h '
+      'LEFT JOIN convidado c ON c.idconvidado = h.convidado_idconvidado '
+      'WHERE h.evento_idevento = :evento ORDER BY h.saiu_em DESC, h.idhistorico_lista_espera DESC',
+      {'evento': evento.idBanco},
+    );
   }
 
   Future<Map<String, List<Map<String, String?>>>> buscarDetalhesEvento(

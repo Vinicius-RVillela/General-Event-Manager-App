@@ -1,6 +1,6 @@
 name: app_eventos
 description: Gerenciador de eventos pelo terminal, com dados no MySQL.
-version: 3.3.0
+version: 3.4.0
 publish_to: none
 
 environment:

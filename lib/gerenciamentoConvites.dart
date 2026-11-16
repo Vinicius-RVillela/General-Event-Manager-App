@@ -3,6 +3,7 @@ import 'Checkin.dart';
 import 'Convite.dart';
 import 'convidado.dart';
 import 'Evento.dart';
+import 'gerenciamentoListaEspera.dart';
 import 'validacao.dart';
 
 Future<void> gerenciarConvites(
@@ -32,11 +33,15 @@ Future<void> gerenciarConvites(
           break;
         }
 
+        // Quem está na fila sai dela pela Lista de espera (menu 11), não por aqui.
+        final naFila = await idsNaFila(evento, convidados);
         final disponiveis = convidados
-            .where((c) => !convitesDoEvento.any((cv) => cv.convidado == c))
+            .where((c) =>
+                !convitesDoEvento.any((cv) => cv.convidado == c) &&
+                !naFila.contains(c.idBanco))
             .toList();
         if (disponiveis.isEmpty) {
-          print('Todos os convidados já foram convidados para este evento.');
+          print('Todos os convidados já foram convidados ou estão na lista de espera.');
           break;
         }
 
@@ -59,6 +64,17 @@ Future<void> gerenciarConvites(
           break;
         }
 
+        // Evento lotado? Em vez de convidar, a pessoa vai para a fila.
+        final vagas = await vagasDoEvento(evento, convidados, convites);
+        if (vagas.lotado) {
+          print('Evento lotado (${vagas.convitesAtivos} de ${vagas.limite} vagas).');
+          print('Colocar ${escolhido.nome} na lista de espera? (s/n)');
+          if (lerLinha().trim().toLowerCase().startsWith('s')) {
+            await colocarNaFila(evento, escolhido, convidados, convites);
+          }
+          break;
+        }
+
         final convite = Convite(evento: evento, convidado: escolhido);
         try {
           await banco.salvarConvite(convite);
@@ -72,6 +88,22 @@ Future<void> gerenciarConvites(
         break;
 
       case '2':
+        final vagasAgora = await vagasDoEvento(evento, convidados, convites);
+        if (vagasAgora.lotado) {
+          print('Evento lotado (${vagasAgora.convitesAtivos} de ${vagasAgora.limite} vagas): '
+              'a pessoa será cadastrada e colocada na lista de espera.');
+          final pessoa = Convidado();
+          pessoa.cadastrar();
+          try {
+            await banco.salvarConvidado(pessoa);
+          } catch (e) {
+            print('Erro ao salvar no banco. Nada foi gravado. Detalhe: $e');
+            break;
+          }
+          convidados.add(pessoa);
+          await colocarNaFila(evento, pessoa, convidados, convites);
+          break;
+        }
         var novo = Convidado();
         novo.cadastrar();
         final conviteNovo = Convite(evento: evento, convidado: novo);
@@ -122,6 +154,18 @@ Future<void> gerenciarConvites(
           break;
         }
 
+        // Reativar um convite recusado ocupa uma vaga de novo.
+        if (escolhidoConvite.status == StatusConfirmacao.recusado &&
+            novoStatus == StatusConfirmacao.confirmado) {
+          final vagas = await vagasDoEvento(evento, convidados, convites);
+          if (vagas.lotado) {
+            print('Evento lotado: não há vaga para reativar este convite. '
+                'Aumente o limite na Lista de espera (menu 11).');
+            break;
+          }
+        }
+
+        final statusAntes = escolhidoConvite.status;
         try {
           await banco.atualizarStatusConvite(escolhidoConvite, novoStatus);
         } catch (e) {
@@ -133,6 +177,12 @@ Future<void> gerenciarConvites(
         print(novoStatus == StatusConfirmacao.confirmado
             ? 'Convite confirmado.'
             : 'Convite recusado.');
+
+        // Recusou agora? A vaga abriu: o código oferece ao 1º da fila.
+        if (novoStatus == StatusConfirmacao.recusado &&
+            statusAntes != StatusConfirmacao.recusado) {
+          await oferecerVagaAoPrimeiro(evento, convidados, convites, checkins);
+        }
         break;
 
       case '4':
