@@ -38,8 +38,8 @@ class ConfigBanco {
 }
 
 const Map<String, String> consultasLeitura = {
-  'organizador':
-      'SELECT id_organizador AS id, nome, email, telefone, ativo FROM organizador ORDER BY id_organizador',
+  'usuario':
+      'SELECT id_usuario AS id, nome, email, telefone, ativo FROM usuario ORDER BY id_usuario',
   'evento':
       'SELECT idevento AS id, nome, data_evento, local_evento, tipo_evento, '
       'organizador_id_organizador AS organizador FROM evento ORDER BY idevento',
@@ -61,10 +61,10 @@ const Map<String, String> consultasLeitura = {
       'taxa_comparecimento AS taxa FROM historico_evento ORDER BY idhistorico_evento',
   'login_registro':
       'SELECT idlogin_registro AS id, email_informado AS email, sucesso, data_hora, '
-      'organizador_id_organizador AS organizador FROM login_registro '
+      'usuario_id_usuario AS organizador FROM login_registro '
       'ORDER BY idlogin_registro DESC LIMIT 200',
   'sessao_login':
-      'SELECT idsessao AS id, inicio, fim, organizador_id_organizador AS organizador '
+      'SELECT idsessao AS id, inicio, fim, usuario_id_usuario AS organizador '
       'FROM sessao_login ORDER BY idsessao DESC LIMIT 200',
 };
 
@@ -169,8 +169,8 @@ class BancoDeDados {
 
   Future<Map<String, String?>?> buscarOrganizadorPorEmail(String email) async {
     final linhas = await _consultar(
-      'SELECT id_organizador AS id, nome, email, telefone, senha_hash '
-      'FROM organizador WHERE email = :email AND ativo = 1 LIMIT 1',
+      'SELECT id_usuario AS id, nome, email, telefone, senha_hash '
+      'FROM usuario WHERE email = :email AND ativo = 1 LIMIT 1',
       {'email': email},
     );
     return linhas.isEmpty ? null : linhas.first;
@@ -217,7 +217,7 @@ class BancoDeDados {
   }) {
     return _executar(
       'INSERT INTO login_registro (email_informado, sucesso, data_hora, '
-      'organizador_id_organizador) VALUES (:email, :sucesso, NOW(), :org)',
+      'usuario_id_usuario) VALUES (:email, :sucesso, NOW(), :org)',
       {
         'email': email,
         'sucesso': sucesso ? 1 : 0,
@@ -228,7 +228,7 @@ class BancoDeDados {
 
   Future<int> iniciarSessao(int idOrganizador) {
     return _inserir(
-      'INSERT INTO sessao_login (inicio, organizador_id_organizador) '
+      'INSERT INTO sessao_login (inicio, usuario_id_usuario) '
       'VALUES (NOW(), :org)',
       {'org': idOrganizador},
     );
@@ -244,17 +244,17 @@ class BancoDeDados {
   Future<void> trocarSenha(int idOrganizador, String hash) {
     return _transacao(() async {
       await _executar(
-        'UPDATE organizador SET senha_hash = :hash WHERE id_organizador = :id',
+        'UPDATE usuario SET senha_hash = :hash WHERE id_usuario = :id',
         {'hash': hash, 'id': idOrganizador},
       );
       await _executar(
-        'INSERT INTO troca_senha (data_hora, organizador_id_organizador) '
+        'INSERT INTO troca_senha (data_hora, usuario_id_usuario) '
         'VALUES (NOW(), :id)',
         {'id': idOrganizador},
       );
       await _executar(
         'DELETE FROM bloqueio_login WHERE email = '
-        '(SELECT email FROM organizador WHERE id_organizador = :id)',
+        '(SELECT email FROM usuario WHERE id_usuario = :id)',
         {'id': idOrganizador},
       );
     });
@@ -267,7 +267,7 @@ class BancoDeDados {
     required String hash,
   }) {
     return _inserir(
-      'INSERT INTO organizador (nome, email, telefone, senha_hash) '
+      'INSERT INTO usuario (nome, email, telefone, senha_hash) '
       'VALUES (:nome, :email, :telefone, :hash)',
       {
         'nome': nome,
@@ -472,7 +472,7 @@ class BancoDeDados {
       'h.total_presentes AS total_presentes, h.taxa_comparecimento AS taxa, '
       'm.idmesa AS idmesa, m.numero_mesa AS numero_mesa, m.capacidade AS capacidade '
       'FROM evento e '
-      'JOIN organizador o ON o.id_organizador = e.organizador_id_organizador '
+      'JOIN usuario o ON o.id_usuario = e.organizador_id_organizador '
       'JOIN historico_evento h ON h.idhistorico_evento = e.historico_evento_idhistorico_evento '
       "LEFT JOIN mesa m ON m.evento_idevento = e.idevento AND m.numero_mesa = 'Geral' "
       'ORDER BY e.idevento',
