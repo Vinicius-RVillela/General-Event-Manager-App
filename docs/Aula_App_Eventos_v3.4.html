@@ -1,0 +1,1407 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aula App de Eventos v3.4</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,750&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: uma coluna de leitura (~72ch), sumário no topo, partes numeradas; blocos de código e tabelas roláveis por dentro. */
+:root {
+  --bg: #f6f8fa;
+  --surface: #ffffff;
+  --fg: #16212c;
+  --muted: #546372;
+  --line: #d9e1e8;
+  --accent: #0b6aa8;
+  --accent-soft: #e3f0f9;
+  --code-bg: #eef2f6;
+  --code-fg: #1b2a38;
+  --note-bg: #fff6e0;
+  --note-line: #e0b54a;
+  --ok: #217a4b;
+  --ok-soft: #e4f4eb;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f161d; --surface: #151f29; --fg: #e4ebf1; --muted: #9aabbb; --line: #27364a;
+    --accent: #5cb4ec; --accent-soft: #13283a; --code-bg: #1a2633; --code-fg: #dbe6ef;
+    --note-bg: #2a2412; --note-line: #b8913a; --ok: #5fcf92; --ok-soft: #12291d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f161d; --surface: #151f29; --fg: #e4ebf1; --muted: #9aabbb; --line: #27364a;
+  --accent: #5cb4ec; --accent-soft: #13283a; --code-bg: #1a2633; --code-fg: #dbe6ef;
+  --note-bg: #2a2412; --note-line: #b8913a; --ok: #5fcf92; --ok-soft: #12291d; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 17px; line-height: 1.62;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.page { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+header.capa { padding-block: 8px 20px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1, h2, h3, h4 { font-family: var(--font-display); text-wrap: balance; line-height: 1.2; }
+h1 { font-size: clamp(30px, 6vw, 44px); font-weight: 750; margin: 6px 0 10px; }
+.parte { margin-top: 48px; padding: 18px 20px; border-radius: 12px; background: var(--accent); color: #fff; }
+.parte .eyebrow { color: rgba(255,255,255,.82); }
+.parte h2 { margin: 4px 0 4px; border: 0; padding: 0; color: #fff; font-size: 28px; }
+.parte p { margin: 4px 0 0; color: rgba(255,255,255,.9); }
+h2 { font-size: 26px; font-weight: 750; margin: 40px 0 6px; padding-top: 12px; border-top: 2px solid var(--accent); }
+h3 { font-size: 21px; font-weight: 600; margin: 30px 0 4px; }
+h4 { font-size: 17px; font-weight: 600; margin: 18px 0 2px; font-family: var(--font-body); }
+p { margin: 8px 0; max-width: 72ch; }
+.lead { font-size: 19px; color: var(--muted); max-width: 64ch; }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+ul, ol { margin: 8px 0; padding-left: 22px; max-width: 72ch; }
+li { margin: 4px 0; }
+code, pre { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+code { font-family: var(--font-mono); font-size: .86em; background: var(--code-bg); color: var(--code-fg); padding: 1px 5px; border-radius: 4px; }
+pre {
+  font-family: var(--font-mono); font-size: 13.5px; line-height: 1.55;
+  background: var(--code-bg); color: var(--code-fg);
+  padding: 14px 16px; border-radius: 8px; overflow-x: auto; margin: 10px 0;
+  border: 1px solid var(--line);
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+.c { color: var(--muted); font-style: italic; }
+.file { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin: 14px 0 -6px; }
+.rotulo { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; margin: 12px 0 -4px; }
+.rotulo.geral { background: var(--accent-soft); color: var(--accent); }
+.rotulo.projeto { background: var(--ok-soft); color: var(--ok); }
+nav.sumario { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; }
+nav.sumario ol { margin: 6px 0 0; }
+nav.sumario ol ol { margin: 2px 0 6px; font-size: 15px; }
+nav.sumario .eyebrow { margin: 0; }
+.tabela { overflow-x: auto; margin: 10px 0; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; background: var(--surface); }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 700; color: var(--muted); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+tr:last-child td { border-bottom: 0; }
+td code { white-space: nowrap; }
+.mesa td, .mesa th { font-family: var(--font-mono); font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.mesa th { font-family: var(--font-body); }
+.nota { background: var(--note-bg); border-left: 4px solid var(--note-line); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+.nota p { margin: 4px 0; }
+.fala { background: var(--accent-soft); border-radius: 10px; padding: 14px 18px; margin: 12px 0; }
+.fala p { margin: 6px 0; }
+.pilares { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+.pilar { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.pilar b { display: block; font-family: var(--font-display); font-size: 18px; color: var(--accent); }
+.pilar span { font-size: 15px; color: var(--muted); }
+.camadas { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+.camada { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.camada .n { font-family: var(--font-display); font-weight: 750; font-size: 22px; color: var(--accent); line-height: 1.2; }
+.camada b { display: block; }
+.camada span { color: var(--muted); font-size: 15px; }
+.camada code { font-size: 12.5px; }
+.camada > div { min-width: 0; }
+.arvore { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; overflow-x: auto; margin: 12px 0; }
+.arvore ul { list-style: none; padding-left: 22px; margin: 0; border-left: 1px dashed var(--line); }
+.arvore > ul { border-left: 0; padding-left: 0; }
+.arvore li { margin: 6px 0; }
+.arvore .no { font-family: var(--font-mono); font-size: 14px; font-weight: 600; }
+.arvore .abs { color: var(--accent); }
+.arvore .novo { color: var(--ok); }
+.arvore small { color: var(--muted); font-family: var(--font-body); font-size: 13.5px; margin-left: 6px; }
+.passos { counter-reset: p; list-style: none; padding-left: 0; }
+.passos li { counter-increment: p; display: grid; grid-template-columns: 30px 1fr; gap: 8px; }
+.passos li::before { content: counter(p); font-family: var(--font-display); font-weight: 750; color: var(--accent); }
+.passos li > div { min-width: 0; }
+.exercicio { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; margin: 10px 0; }
+.exercicio p:first-child { margin-top: 0; }
+.resposta { border-top: 1px dashed var(--line); margin-top: 10px; padding-top: 8px; }
+.resposta > b { color: var(--ok); }
+dl.glossario { margin: 10px 0; }
+dl.glossario dt { font-weight: 700; margin-top: 10px; }
+dl.glossario dd { margin: 2px 0 0 0; color: var(--fg); max-width: 72ch; }
+footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+@media (max-width: 560px) {
+  .pilares { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  body { font-size: 16px; }
+  h2 { font-size: 23px; }
+  .parte h2 { font-size: 24px; }
+  pre { font-size: 12.5px; }
+}
+@media print {
+  :root { --bg: #fff; --surface: #fff; --fg: #111; --muted: #444; --line: #ccc; --accent: #0b5a8f; --accent-soft: #eef5fb; --code-bg: #f3f5f7; --code-fg: #111; --note-bg: #fff8e6; --ok: #1d6b41; --ok-soft: #e9f6ee; color-scheme: light; }
+  body { padding: 0; font-size: 12pt; }
+  pre { white-space: pre-wrap; word-break: break-word; font-size: 9.5pt; }
+  pre, .camada, .nota, .fala, table, .arvore, .pilar, .exercicio { break-inside: avoid; }
+  .parte { break-before: page; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rotulo { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  h2, h3, h4 { break-after: avoid; }
+  nav.sumario a { color: inherit; text-decoration: none; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto !important; } }
+html { scroll-behavior: smooth; }
+</style>
+
+<div class="page">
+
+<header class="capa">
+  <div class="eyebrow">Projeto Integrador · App de Eventos · Dart + MariaDB</div>
+  <h1>Aula completa: lógica, POO e Dart no App de Eventos v3.4</h1>
+  <p class="lead">Material de estudo para a apresentação. Começa pela lógica de programação, mostra onde ela aparece no seu código, explica Programação Orientada a Objetos (getters, setters, herança, polimorfismo e mais), apresenta os recursos de Dart e termina com o projeto inteiro explicado, exercícios e um glossário.</p>
+</header>
+
+<nav class="sumario" aria-label="Sumário">
+  <p class="eyebrow">Sumário</p>
+  <ol>
+    <li><a href="#parte-logica">Parte I · Lógica de programação com Dart</a>
+      <ol><li>Algoritmo, variáveis e tipos</li><li>Operadores</li><li>Condicionais</li><li>Laços de repetição</li><li>Funções</li><li>Coleções: List, Set e Map</li></ol></li>
+    <li><a href="#parte-logica-projeto">Parte II · Onde está a lógica no seu projeto</a>
+      <ol><li>O menu</li><li>O login com bloqueio</li><li>A contagem regressiva</li><li>A validação de CPF</li><li>Estatísticas e economia de insumos</li><li>A lista de espera</li></ol></li>
+    <li><a href="#parte-poo">Parte III · Programação Orientada a Objetos</a>
+      <ol><li>Classe e objeto</li><li>Os 4 pilares</li><li>Encapsulamento, getters e setters</li><li>Herança</li><li>Polimorfismo</li><li>Abstração e classes abstratas</li><li>Interfaces e mixins</li><li>Composição: "tem um"</li><li>static, factory e const</li></ol></li>
+    <li><a href="#parte-dart">Parte IV · Recursos da linguagem Dart</a></li>
+    <li><a href="#parte-projeto">Parte V · O projeto por dentro</a>
+      <ol><li>Arquitetura</li><li>A árvore do Registro</li><li>Cada arquivo</li><li>O banco.dart</li><li>O que mudou na v3.4</li></ol></li>
+    <li><a href="#parte-pratica">Parte VI · Exercícios, glossário e apresentação</a></li>
+  </ol>
+</nav>
+
+<!-- ================================================================== -->
+<div class="parte" id="parte-logica">
+  <div class="eyebrow">Parte I</div>
+  <h2>Lógica de programação com Dart</h2>
+  <p>A base de tudo: como um programa pensa, guarda valores, decide e repete.</p>
+</div>
+
+<h2>1. Algoritmo, variáveis e tipos</h2>
+<p>Um <strong>algoritmo</strong> é uma sequência de passos para resolver um problema, como uma receita de bolo. Um programa é um algoritmo escrito numa linguagem que o computador entende. Todo algoritmo tem três partes: <strong>entrada</strong> (o que ele recebe), <strong>processamento</strong> (o que faz com isso) e <strong>saída</strong> (o resultado).</p>
+<span class="rotulo geral">Exemplo geral</span>
+<pre><code><span class="c">// Entrada: preço e quantidade. Processamento: multiplicar. Saída: total.</span>
+double preco = 25.0;
+int quantidade = 4;
+double total = preco * quantidade;
+print('Total: R\$ $total');   <span class="c">// Total: R$ 100.0</span></code></pre>
+
+<h3>Variáveis</h3>
+<p>Uma <strong>variável</strong> é uma "caixa com nome" que guarda um valor na memória. Em Dart, toda variável tem um <strong>tipo</strong>, que diz que tipo de valor cabe na caixa.</p>
+<div class="tabela"><table>
+  <thead><tr><th>Tipo</th><th>Guarda</th><th>Exemplo</th></tr></thead>
+  <tbody>
+    <tr><td><code>int</code></td><td>Número inteiro</td><td><code>int idade = 20;</code></td></tr>
+    <tr><td><code>double</code></td><td>Número com casas decimais</td><td><code>double taxa = 0.15;</code></td></tr>
+    <tr><td><code>String</code></td><td>Texto</td><td><code>String nome = 'Ana';</code></td></tr>
+    <tr><td><code>bool</code></td><td>Verdadeiro ou falso</td><td><code>bool presente = true;</code></td></tr>
+    <tr><td><code>DateTime</code></td><td>Data e hora</td><td><code>DateTime.now()</code></td></tr>
+    <tr><td><code>List&lt;T&gt;</code></td><td>Lista ordenada</td><td><code>List&lt;int&gt; notas = [7, 8];</code></td></tr>
+    <tr><td><code>Map&lt;K, V&gt;</code></td><td>Pares chave → valor</td><td><code>{'nome': 'Ana'}</code></td></tr>
+    <tr><td><code>dynamic</code></td><td>Qualquer coisa (evite)</td><td><code>dynamic x = 1;</code></td></tr>
+  </tbody>
+</table></div>
+
+<h3>var, final e const</h3>
+<pre><code>var cidade = 'BH';         <span class="c">// o Dart descobre o tipo (String) e o valor pode mudar</span>
+cidade = 'SP';             <span class="c">// ok</span>
+
+final agora = DateTime.now();  <span class="c">// recebe valor UMA vez, quando o programa roda</span>
+<span class="c">// agora = DateTime.now();     // ERRO: final não pode mudar</span>
+
+const int limite = 3;      <span class="c">// valor fixo já na compilação</span></code></pre>
+<span class="rotulo projeto">No seu projeto</span>
+<div class="file">lib/login.dart</div>
+<pre><code>const int tentativasIniciais = 3;
+const int tentativasAposEspera = 2;
+const int esperaSegundos = 60;</code></pre>
+<p>As regras do login ficam em constantes com nome. Se o professor pedir "5 tentativas em vez de 3", você muda uma linha só, e o código fica mais fácil de ler do que um número solto no meio do programa (o chamado "número mágico").</p>
+
+<h3>Null safety: o valor "vazio"</h3>
+<p><code>null</code> significa "sem valor". O Dart obriga você a dizer quando uma variável pode ficar vazia, colocando <code>?</code> no tipo. Isso evita o erro mais comum da programação: usar algo que não existe.</p>
+<pre><code>int idade = 20;      <span class="c">// nunca pode ser null</span>
+int? idBanco;        <span class="c">// pode ser null (ainda não foi gravado no banco)</span>
+
+idBanco ?? 0         <span class="c">// ??  "se for null, use 0"</span>
+texto?.trim()        <span class="c">// ?.  "só chama trim() se não for null"</span>
+org ??= outro;       <span class="c">// ??= "se org for null, coloque outro nele"</span>
+valor!               <span class="c">// !   "garanto que não é null" (se for, o programa quebra)</span></code></pre>
+
+<h2>2. Operadores</h2>
+<div class="tabela"><table>
+  <thead><tr><th>Grupo</th><th>Operadores</th><th>Exemplo e resultado</th></tr></thead>
+  <tbody>
+    <tr><td>Aritméticos</td><td><code>+ - * /</code></td><td><code>7 / 2</code> → <code>3.5</code></td></tr>
+    <tr><td>Divisão inteira</td><td><code>~/</code></td><td><code>7 ~/ 2</code> → <code>3</code></td></tr>
+    <tr><td>Resto (módulo)</td><td><code>%</code></td><td><code>7 % 2</code> → <code>1</code></td></tr>
+    <tr><td>Relacionais</td><td><code>== != &lt; &gt; &lt;= &gt;=</code></td><td><code>idade &gt;= 18</code> → <code>true</code> ou <code>false</code></td></tr>
+    <tr><td>Lógicos</td><td><code>&amp;&amp;</code> (e), <code>||</code> (ou), <code>!</code> (não)</td><td><code>temLimite &amp;&amp; vagas == 0</code></td></tr>
+    <tr><td>Atribuição</td><td><code>= += -= ++ --</code></td><td><code>soma += 5;</code> é o mesmo que <code>soma = soma + 5;</code></td></tr>
+    <tr><td>Ternário</td><td><code>cond ? a : b</code></td><td><code>idade &gt;= 18 ? 'adulto' : 'menor'</code></td></tr>
+    <tr><td>Null</td><td><code>?? ?. ??=</code></td><td>Veja a seção de null safety</td></tr>
+  </tbody>
+</table></div>
+<p><strong>O resto <code>%</code> é muito usado em lógica.</strong> <code>n % 2 == 0</code> diz se um número é par. <code>n % 15 == 0</code> diz se ele é múltiplo de 15. O seu projeto usa os dois tipos de ideia: no CPF (<code>soma % 11</code>) e na contagem regressiva (<code>restante % 15</code>).</p>
+<p><strong>Os operadores lógicos param cedo</strong> ("curto-circuito"). Em <code>a &amp;&amp; b</code>, se <code>a</code> for falso, o Dart nem olha o <code>b</code>. É por isso que <code>valor != null &amp;&amp; valor &lt; 1</code> nunca quebra: se for null, a segunda parte não roda.</p>
+
+<h2>3. Condicionais: o programa decidindo</h2>
+<h3>if, else if, else</h3>
+<span class="rotulo geral">Exemplo geral</span>
+<pre><code>double nota = 6.5;
+if (nota &gt;= 7) {
+  print('Aprovado');
+} else if (nota &gt;= 5) {
+  print('Recuperação');
+} else {
+  print('Reprovado');
+}</code></pre>
+
+<h3>Ternário: um if que devolve valor</h3>
+<span class="rotulo projeto">No seu projeto</span>
+<div class="file">lib/estatisticas_evento.dart</div>
+<pre><code>final percentualPresenca =
+    totalConfirmados == 0 ? 0.0 : (totalCheckins / totalConfirmados) * 100;</code></pre>
+<p>Lê-se: "se não tem confirmados, a presença é 0; senão, faz a conta". O ternário aqui <strong>evita a divisão por zero</strong>, um caso clássico de lógica que os professores gostam de perguntar.</p>
+
+<h3>switch: escolher entre várias opções</h3>
+<span class="rotulo projeto">No seu projeto</span>
+<div class="file">bin/app_eventos.dart</div>
+<pre><code>switch (opcao) {
+  case '1':
+    await gerenciarConvidados(convidados, convites, checkins);
+    break;
+  case '4':
+    continuar = false;
+    break;
+  default:
+    print('Opção inválida.');
+}</code></pre>
+<ul>
+  <li>Cada <code>case</code> é uma opção do menu. O <code>default</code> pega qualquer coisa que não seja uma opção válida.</li>
+  <li>Em Dart 3, o <code>break</code> no fim do <code>case</code> é opcional, porque um caso não "cai" no próximo. O seu código usa <code>break</code> para deixar o fim de cada opção bem visível.</li>
+</ul>
+
+<h2>4. Laços de repetição</h2>
+<div class="tabela"><table>
+  <thead><tr><th>Laço</th><th>Quando usar</th></tr></thead>
+  <tbody>
+    <tr><td><code>for (int i = 0; i &lt; n; i++)</code></td><td>Sei quantas vezes vai repetir, ou preciso do número da volta</td></tr>
+    <tr><td><code>for (final x in lista)</code></td><td>Quero passar por cada item de uma lista</td></tr>
+    <tr><td><code>while (condição)</code></td><td>Repito enquanto algo for verdade (não sei quantas vezes)</td></tr>
+    <tr><td><code>do { } while (condição);</code></td><td>Igual ao while, mas roda pelo menos uma vez</td></tr>
+  </tbody>
+</table></div>
+<span class="rotulo geral">Exemplo geral</span>
+<pre><code>for (int i = 1; i &lt;= 3; i++) {
+  print('Volta $i');        <span class="c">// Volta 1, Volta 2, Volta 3</span>
+}
+
+final nomes = ['Ana', 'Bruno'];
+for (final n in nomes) {
+  print('Olá, $n');
+}
+
+int senhaErrada = 0;
+while (senhaErrada &lt; 3) {
+  senhaErrada++;            <span class="c">// sem isso, o laço nunca terminaria</span>
+}</code></pre>
+<h3>break e continue</h3>
+<ul>
+  <li><code>break</code>: sai do laço na hora.</li>
+  <li><code>continue</code>: pula o resto desta volta e vai para a próxima.</li>
+</ul>
+<span class="rotulo projeto">No seu projeto</span>
+<div class="file">lib/gerenciamentoListaEspera.dart (renumeração da fila)</div>
+<pre><code>for (final item in fila) {
+  if (item == saindo) continue;   <span class="c">// pula quem está saindo da fila</span>
+  ...
+}</code></pre>
+<div class="nota"><p><strong>Cuidado com o laço infinito.</strong> Todo <code>while</code> precisa de algo que, em algum momento, torne a condição falsa. No menu principal, é a opção 4 que faz <code>continuar = false</code>.</p></div>
+
+<h2>5. Funções</h2>
+<p>Uma <strong>função</strong> é um bloco de código com nome, que você chama quando precisa. Ela evita repetir código e divide um problema grande em pedaços pequenos.</p>
+<pre><code><span class="c">// tipo de retorno · nome · parâmetros</span>
+double media(double a, double b) {
+  return (a + b) / 2;
+}
+
+<span class="c">// Arrow function: quando a função só devolve uma expressão</span>
+double media2(double a, double b) =&gt; (a + b) / 2;
+
+<span class="c">// void: a função não devolve nada</span>
+void saudar(String nome) {
+  print('Olá, $nome');
+}</code></pre>
+<h3>Os três tipos de parâmetro</h3>
+<pre><code><span class="c">// 1) Posicionais: a ordem importa</span>
+int somar(int a, int b) =&gt; a + b;
+somar(2, 3);
+
+<span class="c">// 2) Nomeados, entre { }: quem chama escreve o nome</span>
+void criar({required String nome, int idade = 0}) {}
+criar(nome: 'Ana', idade: 30);
+criar(nome: 'Bruno');              <span class="c">// idade usa o padrão 0</span>
+
+<span class="c">// 3) Posicionais opcionais, entre [ ]</span>
+String titulo(String nome, [String? sobrenome]) =&gt; '$nome ${sobrenome ?? ''}';</code></pre>
+<span class="rotulo projeto">No seu projeto</span>
+<div class="file">lib/login.dart</div>
+<pre><code>Future&lt;Organizador?&gt; _rodada(int quantidade, {required bool aplicarEspera}) async {</code></pre>
+<p>Um parâmetro posicional (<code>quantidade</code>) e um nomeado obrigatório (<code>aplicarEspera</code>). Ao ler <code>_rodada(3, aplicarEspera: true)</code>, fica claro o que o <code>true</code> significa. Com <code>_rodada(3, true)</code>, ninguém saberia.</p>
+<h3>Função dentro de função</h3>
+<p>O seu <code>cpfValido</code> tem uma função <code>calcularDigito</code> <strong>dentro</strong> dele. Ela só existe ali, porque só faz sentido para o CPF. Isso organiza o código sem "sujar" o resto do arquivo.</p>
+
+<h2>6. Coleções: List, Set e Map</h2>
+<pre><code><span class="c">// List: ordenada, aceita repetidos, acesso por posição (começa em 0)</span>
+final notas = [7, 8, 7];
+notas[0];          <span class="c">// 7</span>
+notas.add(10);
+notas.length;      <span class="c">// 4</span>
+
+<span class="c">// Set: sem repetidos</span>
+final ids = {1, 2, 2, 3};   <span class="c">// {1, 2, 3}</span>
+ids.contains(2);            <span class="c">// true</span>
+
+<span class="c">// Map: chave → valor</span>
+final linha = {'nome': 'Ana', 'email': 'ana@x.com'};
+linha['nome'];              <span class="c">// 'Ana'</span></code></pre>
+<span class="rotulo projeto">No seu projeto</span>
+<ul>
+  <li><strong>List:</strong> <code>List&lt;Convite&gt; convites</code>, que é carregada do banco e passada para os menus.</li>
+  <li><strong>Set:</strong> em <code>idsNaFila</code>, os ids de quem está na fila viram um <code>Set</code>, porque a pergunta "esta pessoa está na fila?" (<code>contains</code>) é rápida num conjunto.</li>
+  <li><strong>Map:</strong> cada linha que vem do MySQL é um <code>Map&lt;String, String?&gt;</code>: o nome da coluna é a chave, o valor da coluna é o valor.</li>
+</ul>
+
+<h3>Funções de coleção (estilo funcional)</h3>
+<div class="tabela"><table>
+  <thead><tr><th>Função</th><th>O que faz</th><th>Exemplo</th></tr></thead>
+  <tbody>
+    <tr><td><code>where</code></td><td>Filtra</td><td><code>convites.where((c) =&gt; c.status == confirmado)</code></td></tr>
+    <tr><td><code>map</code></td><td>Transforma cada item</td><td><code>fila.map((i) =&gt; i.convidado.nome)</code></td></tr>
+    <tr><td><code>any</code></td><td>Existe algum que...?</td><td><code>fila.any((i) =&gt; i.convidado == c)</code></td></tr>
+    <tr><td><code>every</code></td><td>Todos são...?</td><td><code>notas.every((n) =&gt; n &gt;= 5)</code></td></tr>
+    <tr><td><code>fold</code></td><td>Acumula um valor</td><td><code>notas.fold(0, (soma, n) =&gt; soma + n)</code></td></tr>
+    <tr><td><code>first</code>, <code>take(n)</code></td><td>O primeiro, os n primeiros</td><td><code>fila.first</code>, <code>fila.take(3)</code></td></tr>
+    <tr><td><code>toList()</code>, <code>toSet()</code></td><td>Converte o resultado</td><td><code>.where(...).toList()</code></td></tr>
+  </tbody>
+</table></div>
+<p>O <code>(c) =&gt; ...</code> é uma <strong>função anônima</strong> (lambda): uma função pequena, sem nome, passada como parâmetro para outra função.</p>
+<p><strong>Mesma lógica, dois estilos.</strong> As duas versões abaixo contam os confirmados:</p>
+<pre><code><span class="c">// Estilo "laço" (imperativo)</span>
+int confirmados = 0;
+for (final c in convites) {
+  if (c.status == StatusConfirmacao.confirmado) confirmados++;
+}
+
+<span class="c">// Estilo "coleção" (funcional), usado no seu projeto</span>
+final confirmados2 =
+    convites.where((c) =&gt; c.status == StatusConfirmacao.confirmado).length;</code></pre>
+
+<!-- ================================================================== -->
+<div class="parte" id="parte-logica-projeto">
+  <div class="eyebrow">Parte II</div>
+  <h2>Onde está a lógica no seu projeto</h2>
+  <p>Os trechos do App de Eventos em que o programa decide, repete e calcula, com teste de mesa.</p>
+</div>
+
+<p>Um <strong>teste de mesa</strong> é executar o algoritmo "à mão", anotando o valor de cada variável a cada passo. É a melhor forma de provar que a lógica está certa, e professores costumam pedir.</p>
+
+<h2>1. O menu: laço + decisão</h2>
+<div class="file">bin/app_eventos.dart</div>
+<pre><code>bool continuar = true;
+while (continuar) {                 <span class="c">// repete até o usuário sair</span>
+  print('=== MENU PRINCIPAL ===');
+  ...
+  String opcao = lerLinha().trim(); <span class="c">// entrada</span>
+  switch (opcao) {                  <span class="c">// decisão</span>
+    case '4':
+      continuar = false;            <span class="c">// é isto que encerra o laço</span>
+      break;
+    ...
+  }
+}</code></pre>
+<p>É o padrão de todo programa de terminal: <strong>mostrar → ler → decidir → repetir</strong>. Os submenus (convidados, convites, check-in, lista de espera) repetem exatamente esse mesmo desenho.</p>
+<p><strong>Mais uma decisão importante:</strong> antes das opções que dependem de um evento, o código confere <code>if (org.eventoGerenciado == null)</code>. Assim o programa nunca tenta usar um evento que não foi escolhido.</p>
+
+<h2>2. O login: contadores e estados</h2>
+<div class="file">lib/login.dart</div>
+<pre><code>Future&lt;Organizador?&gt; executarLogin() async {
+  while (true) {
+    var org = await _rodada(tentativasIniciais, aplicarEspera: true);   <span class="c">// 3 tentativas</span>
+    org ??= await _rodada(tentativasAposEspera, aplicarEspera: false);  <span class="c">// +2 se falhou</span>
+    if (org != null) {
+      ...
+      return org;                     <span class="c">// sucesso: sai do laço</span>
+    }
+    final senhaTrocada = await _esqueciASenha();
+    if (!senhaTrocada) return null;   <span class="c">// desistiu: sai</span>
+  }                                   <span class="c">// trocou a senha: volta ao começo</span>
+}</code></pre>
+<p>A lógica forma uma sequência de <strong>estados</strong>:</p>
+<ol class="passos">
+  <li><div><strong>Rodada 1:</strong> até 3 tentativas. Se errar as 3, o e-mail fica bloqueado por 60 segundos (gravado no banco).</div></li>
+  <li><div><strong>Rodada 2:</strong> mais 2 tentativas, sem novo bloqueio. O <code>??=</code> só roda esta rodada se a primeira devolveu <code>null</code>.</div></li>
+  <li><div><strong>Esqueci a senha:</strong> até 3 chances de confirmar nome e e-mail e cadastrar uma senha nova.</div></li>
+  <li><div><strong>Recomeça</strong> do passo 1 com a senha nova, graças ao <code>while (true)</code>.</div></li>
+</ol>
+<p>Dentro de <code>_rodada</code>, um <code>for (int i = 1; i &lt;= quantidade; i++)</code> conta as tentativas, e a condição <code>aplicarEspera &amp;&amp; i == quantidade</code> detecta "errou a última tentativa da primeira rodada".</p>
+<p><strong>Segurança dentro da lógica:</strong> a senha nunca é comparada como texto. A função <code>senhaConfere</code> usa o bcrypt para comparar a senha digitada com o hash guardado no banco.</p>
+
+<h2>3. A contagem regressiva: o operador %</h2>
+<div class="file">lib/login.dart</div>
+<pre><code>Future&lt;void&gt; _esperar(int segundos) async {
+  for (int restante = segundos; restante &gt; 0; restante--) {
+    await Future.delayed(const Duration(seconds: 1));
+    if (restante &gt; 1 &amp;&amp; restante % 15 == 0) {
+      print('Faltam $restante segundos...');
+    }
+  }
+}</code></pre>
+<p>Um laço que <strong>conta para trás</strong> (<code>restante--</code>) e espera 1 segundo por volta. O <code>% 15 == 0</code> faz o aviso aparecer só nos múltiplos de 15.</p>
+<div class="tabela"><table class="mesa">
+  <thead><tr><th>restante</th><th>restante % 15</th><th>Mostra aviso?</th></tr></thead>
+  <tbody>
+    <tr><td>60</td><td>0</td><td>sim: "Faltam 60 segundos..."</td></tr>
+    <tr><td>59 ... 46</td><td>14 ... 1</td><td>não</td></tr>
+    <tr><td>45</td><td>0</td><td>sim</td></tr>
+    <tr><td>30</td><td>0</td><td>sim</td></tr>
+    <tr><td>15</td><td>0</td><td>sim</td></tr>
+    <tr><td>14 ... 1</td><td>14 ... 1</td><td>não (o laço termina depois do 1)</td></tr>
+  </tbody>
+</table></div>
+
+<h2>4. A validação de CPF: um algoritmo clássico</h2>
+<div class="file">lib/validacao.dart</div>
+<pre><code>bool cpfValido(String cpf) {
+  final digitos = cpf.replaceAll(RegExp(r'[^0-9]'), '');      <span class="c">// 1) só números</span>
+  if (digitos.length != 11) return false;                     <span class="c">// 2) precisa de 11</span>
+  if (RegExp(r'^(\d)\1*$').hasMatch(digitos)) return false;   <span class="c">// 3) 111.111.111-11 não vale</span>
+
+  List&lt;int&gt; nums = digitos.split('').map(int.parse).toList();  <span class="c">// 4) texto → lista de int</span>
+
+  int calcularDigito(List&lt;int&gt; base, int pesoInicial) {
+    int soma = 0;
+    for (int i = 0; i &lt; base.length; i++) {
+      soma += base[i] * (pesoInicial - i);                     <span class="c">// 5) soma ponderada</span>
+    }
+    int resto = soma % 11;
+    return resto &lt; 2 ? 0 : 11 - resto;                         <span class="c">// 6) regra do dígito</span>
+  }
+
+  int primeiroDigito = calcularDigito(nums.sublist(0, 9), 10);
+  int segundoDigito = calcularDigito(nums.sublist(0, 10), 11);
+  return primeiroDigito == nums[9] &amp;&amp; segundoDigito == nums[10]; <span class="c">// 7) confere</span>
+}</code></pre>
+<p>Aqui aparece quase toda a lógica de programação junta: limpeza da entrada, condições de saída antecipada (<code>return false</code>), conversão de tipos, laço com acumulador, operador <code>%</code>, ternário e operador lógico <code>&amp;&amp;</code>.</p>
+<h3>Teste de mesa com o CPF 529.982.247-25</h3>
+<p><strong>Primeiro dígito:</strong> os 9 primeiros números, com pesos de 10 até 2.</p>
+<div class="tabela"><table class="mesa">
+  <thead><tr><th>i</th><th>número</th><th>peso (10 − i)</th><th>produto</th><th>soma acumulada</th></tr></thead>
+  <tbody>
+    <tr><td>0</td><td>5</td><td>10</td><td>50</td><td>50</td></tr>
+    <tr><td>1</td><td>2</td><td>9</td><td>18</td><td>68</td></tr>
+    <tr><td>2</td><td>9</td><td>8</td><td>72</td><td>140</td></tr>
+    <tr><td>3</td><td>9</td><td>7</td><td>63</td><td>203</td></tr>
+    <tr><td>4</td><td>8</td><td>6</td><td>48</td><td>251</td></tr>
+    <tr><td>5</td><td>2</td><td>5</td><td>10</td><td>261</td></tr>
+    <tr><td>6</td><td>2</td><td>4</td><td>8</td><td>269</td></tr>
+    <tr><td>7</td><td>4</td><td>3</td><td>12</td><td>281</td></tr>
+    <tr><td>8</td><td>7</td><td>2</td><td>14</td><td>295</td></tr>
+  </tbody>
+</table></div>
+<p><code>295 % 11 = 9</code>. Como 9 não é menor que 2, o dígito é <code>11 − 9 = 2</code>. O CPF tem <strong>2</strong> nessa posição. ✔</p>
+<p><strong>Segundo dígito:</strong> os 10 primeiros números (5 2 9 9 8 2 2 4 7 2), com pesos de 11 até 2. A soma dá <code>55 + 20 + 81 + 72 + 56 + 12 + 10 + 16 + 21 + 4 = 347</code>. Depois, <code>347 % 11 = 6</code>, e o dígito é <code>11 − 6 = 5</code>. O CPF tem <strong>5</strong> no fim. ✔ Resultado: CPF válido.</p>
+
+<h2>5. Estatísticas e economia de insumos: lógica matemática</h2>
+<h3>Estatísticas</h3>
+<div class="file">lib/estatisticas_evento.dart</div>
+<pre><code>final totalConvites = convites.length;
+final totalConfirmados =
+    convites.where((c) =&gt; c.status == StatusConfirmacao.confirmado).length;
+final totalCheckins = checkins.where((chk) =&gt; chk.presente == true).length;
+
+final percentualConfirmados =
+    totalConvites == 0 ? 0.0 : (totalConfirmados / totalConvites) * 100;
+final percentualPresenca =
+    totalConfirmados == 0 ? 0.0 : (totalCheckins / totalConfirmados) * 100;</code></pre>
+<p><strong>Exemplo:</strong> com 10 convites, 8 confirmados e 6 check-ins, temos <code>8 / 10 × 100 = 80%</code> confirmados e <code>6 / 8 × 100 = 75%</code> de presença entre os confirmados.</p>
+
+<h3>Economia de insumos</h3>
+<div class="file">lib/economia_insumos.dart</div>
+<pre><code>const double consumoPorPessoaKg = 0.4;
+const double margemPlanejamento = 0.15;
+const double custoPorKg = 45.0;
+
+final fator = consumoPorPessoaKg * (1 + margemPlanejamento);   <span class="c">// 0,4 × 1,15 = 0,46 kg</span>
+final planejadoCadastrados = cadastrados * fator;
+final planejadoConfirmados = confirmados * fator;
+final consumido = presentes * consumoPorPessoaKg;
+final desperdicio = planejadoConfirmados - consumido;
+final economia = planejadoCadastrados - planejadoConfirmados;</code></pre>
+<div class="tabela"><table class="mesa">
+  <thead><tr><th>Passo</th><th>Conta (100 cadastrados, 80 confirmados, 70 presentes)</th><th>Resultado</th></tr></thead>
+  <tbody>
+    <tr><td>fator</td><td>0,4 × 1,15</td><td>0,46 kg por pessoa</td></tr>
+    <tr><td>planejado (cadastrados)</td><td>100 × 0,46</td><td>46,00 kg</td></tr>
+    <tr><td>planejado (confirmados)</td><td>80 × 0,46</td><td>36,80 kg</td></tr>
+    <tr><td>consumido</td><td>70 × 0,4</td><td>28,00 kg</td></tr>
+    <tr><td>desperdício</td><td>36,80 − 28,00</td><td>8,80 kg = R$ 396,00</td></tr>
+    <tr><td>economia</td><td>46,00 − 36,80</td><td>9,20 kg = R$ 414,00</td></tr>
+  </tbody>
+</table></div>
+<p>A lógica mostra que <strong>planejar pelos confirmados</strong> em vez de pelos cadastrados economiza 9,2 kg (R$ 414,00) neste exemplo.</p>
+
+<h2>6. A lista de espera: busca, filtro e renumeração</h2>
+<h3>Encontrar a última posição (busca do maior valor)</h3>
+<div class="file">lib/gerenciamentoListaEspera.dart</div>
+<pre><code>int ultima = 0;
+for (final item in fila) {
+  if (item.posicao &gt; ultima) ultima = item.posicao;
+}
+final novo = ItemListaEspera(evento: evento, convidado: convidado, posicao: ultima + 1);</code></pre>
+<div class="tabela"><table class="mesa">
+  <thead><tr><th>Volta</th><th>item.posicao</th><th>item.posicao &gt; ultima?</th><th>ultima depois</th></tr></thead>
+  <tbody>
+    <tr><td>início</td><td>—</td><td>—</td><td>0</td></tr>
+    <tr><td>1</td><td>1</td><td>1 &gt; 0 sim</td><td>1</td></tr>
+    <tr><td>2</td><td>2</td><td>2 &gt; 1 sim</td><td>2</td></tr>
+    <tr><td>3</td><td>3</td><td>3 &gt; 2 sim</td><td>3</td></tr>
+  </tbody>
+</table></div>
+<p>A pessoa nova entra na posição <code>3 + 1 = 4</code>. Se a fila estiver vazia, o laço não roda, <code>ultima</code> fica 0 e a pessoa entra em 1.</p>
+
+<h3>Renumerar depois que alguém sai</h3>
+<pre><code>int posicao = 1;
+for (final item in fila) {
+  if (item == saindo) continue;
+  if (item.posicao != posicao) {
+    item.posicao = posicao;
+    mudaram.add(item);
+  }
+  posicao++;
+}</code></pre>
+<p>Teste de mesa com a fila <strong>1-Ana, 2-Bruno, 3-Carla, 4-Davi</strong>, com o Bruno saindo:</p>
+<div class="tabela"><table class="mesa">
+  <thead><tr><th>item</th><th>posicao (contador)</th><th>O que acontece</th><th>mudaram</th></tr></thead>
+  <tbody>
+    <tr><td>Ana (1)</td><td>1</td><td>1 == 1, nada muda; contador vai a 2</td><td>[]</td></tr>
+    <tr><td>Bruno (2)</td><td>2</td><td>é quem sai: <code>continue</code> (contador não anda)</td><td>[]</td></tr>
+    <tr><td>Carla (3)</td><td>2</td><td>3 != 2, Carla vira 2; contador vai a 3</td><td>[Carla]</td></tr>
+    <tr><td>Davi (4)</td><td>3</td><td>4 != 3, Davi vira 3; contador vai a 4</td><td>[Carla, Davi]</td></tr>
+  </tbody>
+</table></div>
+<p>Resultado: 1-Ana, 2-Carla, 3-Davi. Só Carla e Davi recebem <code>UPDATE</code> no banco.</p>
+
+<h3>Quantos da fila cabem (o menor de dois números)</h3>
+<pre><code>int get cabemDaFila {
+  final v = vagasLivres;
+  if (v == null) return pessoasNaFila;         <span class="c">// sem limite: todos cabem</span>
+  return v &lt; pessoasNaFila ? v : pessoasNaFila;  <span class="c">// o menor dos dois</span>
+}</code></pre>
+<p>Com limite 10 e 8 convites ativos, sobram 2 vagas. Se há 4 pessoas na fila, cabem <code>2</code>. Se só 1 pessoa estiver esperando, cabe <code>1</code>.</p>
+
+<!-- ================================================================== -->
+<div class="parte" id="parte-poo">
+  <div class="eyebrow">Parte III</div>
+  <h2>Programação Orientada a Objetos (POO)</h2>
+  <p>A forma de organizar o código em "coisas" que têm dados e comportamentos.</p>
+</div>
+
+<h2>1. Classe e objeto</h2>
+<p>A <strong>classe</strong> é o molde (a planta da casa). O <strong>objeto</strong> é a coisa feita com o molde (a casa construída). De uma classe você cria quantos objetos quiser, e cada um tem os seus próprios valores.</p>
+<ul>
+  <li><strong>Atributos</strong> (ou campos): o que o objeto <strong>tem</strong>. Um convidado tem nome, e-mail e idade.</li>
+  <li><strong>Métodos</strong>: o que o objeto <strong>faz</strong>. Um convidado sabe <code>cadastrar()</code> e <code>obterDados()</code>.</li>
+  <li><strong>Construtor</strong>: a função especial que cria o objeto e preenche os atributos.</li>
+</ul>
+<span class="rotulo geral">Exemplo geral</span>
+<pre><code>class Carro {
+  String modelo;              <span class="c">// atributo</span>
+  int velocidade = 0;
+
+  Carro(this.modelo);         <span class="c">// construtor: this.modelo guarda o valor direto</span>
+
+  void acelerar(int quanto) { <span class="c">// método</span>
+    velocidade += quanto;
+  }
+}
+
+final a = Carro('Gol');       <span class="c">// objeto 1</span>
+final b = Carro('Onix');      <span class="c">// objeto 2, com valores próprios</span>
+a.acelerar(30);
+print(a.velocidade);          <span class="c">// 30</span>
+print(b.velocidade);          <span class="c">// 0</span></code></pre>
+<span class="rotulo projeto">No seu projeto</span>
+<p>Cada tabela do banco virou uma classe. Cada <strong>linha</strong> da tabela vira um <strong>objeto</strong> quando o programa carrega os dados: a tabela <code>convite</code> tem mais de mil linhas, então a lista <code>convites</code> tem mais de mil objetos <code>Convite</code>.</p>
+
+<h2>2. Os 4 pilares da POO</h2>
+<div class="pilares">
+  <div class="pilar"><b>Abstração</b><span>Representar só o que importa do mundo real. Um Convidado tem nome e idade, não tem cor do cabelo.</span></div>
+  <div class="pilar"><b>Encapsulamento</b><span>Esconder os dados e controlar o acesso por getters e setters, que validam.</span></div>
+  <div class="pilar"><b>Herança</b><span>Uma classe aproveita o que outra já tem. Convite "é um" Registro.</span></div>
+  <div class="pilar"><b>Polimorfismo</b><span>A mesma chamada se comporta de jeitos diferentes, conforme o objeto.</span></div>
+</div>
+
+<h2>3. Encapsulamento, getters e setters</h2>
+<p><strong>O problema:</strong> se qualquer parte do programa pudesse mexer direto nos dados, alguém poderia colocar idade −5 ou e-mail "abc". O encapsulamento resolve isso: o dado fica <strong>privado</strong>, e só se mexe nele por métodos que <strong>conferem</strong> o valor.</p>
+<h3>Privado com _</h3>
+<p>Em Dart, um nome que começa com <code>_</code> só pode ser usado <strong>dentro do mesmo arquivo</strong> (a mesma "biblioteca"). Não existe a palavra <code>private</code> como em Java: o <code>_</code> faz esse papel.</p>
+<span class="rotulo geral">Exemplo geral: sem e com encapsulamento</span>
+<pre><code><span class="c">// SEM encapsulamento: qualquer um estraga o dado</span>
+class ContaRuim {
+  double saldo = 0;
+}
+final r = ContaRuim();
+r.saldo = -1000;              <span class="c">// ninguém impede!</span>
+
+<span class="c">// COM encapsulamento</span>
+class Conta {
+  double _saldo = 0;                        <span class="c">// privado</span>
+
+  double get saldo =&gt; _saldo;               <span class="c">// GETTER: leitura liberada</span>
+
+  void depositar(double valor) {            <span class="c">// a única forma de aumentar</span>
+    if (valor &lt;= 0) throw ArgumentError('Depósito precisa ser positivo');
+    _saldo += valor;
+  }
+
+  void sacar(double valor) {
+    if (valor &gt; _saldo) throw StateError('Saldo insuficiente');
+    _saldo -= valor;
+  }
+}
+final c = Conta();
+c.depositar(100);
+print(c.saldo);               <span class="c">// 100 (pelo getter)</span>
+<span class="c">// c.saldo = 5000;           // ERRO: não existe setter, saldo é só leitura</span></code></pre>
+
+<h3>Getter</h3>
+<p>Um <strong>getter</strong> é um método que se usa como se fosse um atributo. Ele pode só devolver um campo privado, ou <strong>calcular</strong> algo na hora.</p>
+<pre><code>class Retangulo {
+  double largura, altura;
+  Retangulo(this.largura, this.altura);
+
+  double get area =&gt; largura * altura;   <span class="c">// getter CALCULADO: não guarda nada</span>
+}
+final r = Retangulo(3, 4);
+print(r.area);    <span class="c">// 12 (sem parênteses: parece um campo)</span>
+r.largura = 5;
+print(r.area);    <span class="c">// 20: sempre atualizado</span></code></pre>
+
+<h3>Setter</h3>
+<p>Um <strong>setter</strong> é um método que se usa com <code>=</code>, como se fosse atribuir um campo. Ele é o lugar certo para <strong>validar</strong>.</p>
+<pre><code>class Pessoa {
+  int _idade = 0;
+  int get idade =&gt; _idade;
+  set idade(int valor) {
+    if (valor &lt; 0 || valor &gt; 130) {
+      throw ArgumentError('Idade inválida: $valor');
+    }
+    _idade = valor;
+  }
+}
+final p = Pessoa();
+p.idade = 30;    <span class="c">// chama o setter, que valida e guarda</span>
+p.idade = -5;    <span class="c">// lança ArgumentError: o dado errado nunca entra</span></code></pre>
+
+<span class="rotulo projeto">No seu projeto: os três tipos de uso</span>
+<div class="tabela"><table>
+  <thead><tr><th>Caso</th><th>Código</th><th>Por quê</th></tr></thead>
+  <tbody>
+    <tr><td>Setter que valida</td><td><code>set email(String? valor)</code> no <code>Usuario</code></td><td>Recusa e-mail sem formato (exceto <code>admin</code>)</td></tr>
+    <tr><td>Setter que valida</td><td><code>set limiteConvidados(int? valor)</code> no <code>Evento</code></td><td>Recusa limite 0 ou negativo</td></tr>
+    <tr><td>Setter que limpa</td><td><code>set descricao(String valor) =&gt; _descricao = valor.trim();</code></td><td>Tira espaços sobrando</td></tr>
+    <tr><td>Só getter (leitura)</td><td><code>Evento get evento =&gt; _evento;</code> no <code>Convite</code></td><td>O convite não pode trocar de evento depois de criado</td></tr>
+    <tr><td>Getter calculado</td><td><code>vagasLivres</code>, <code>lotado</code> em <code>VagasEvento</code>; <code>statusTexto</code> em <code>Convite</code></td><td>O valor vem de uma conta e está sempre atualizado</td></tr>
+  </tbody>
+</table></div>
+<div class="file">lib/Convite.dart (getter calculado com switch)</div>
+<pre><code>String get statusTexto {
+  switch (_status) {
+    case StatusConfirmacao.pendente:   return 'Pendente';
+    case StatusConfirmacao.confirmado: return 'Confirmado';
+    case StatusConfirmacao.recusado:   return 'Recusado';
+  }
+}</code></pre>
+<div class="nota">
+  <p><strong>Pergunta comum: "por que não deixar o campo público?"</strong> Em Dart dá para começar com um campo público e trocar por getter e setter depois, sem mudar quem usa a classe, porque a forma de usar (<code>obj.campo</code> e <code>obj.campo = x</code>) é a mesma. Por isso o analisador às vezes avisa "unnecessary getter and setter" quando eles não fazem nada além de ler e gravar. No seu projeto, eles foram mantidos de propósito para mostrar o encapsulamento.</p>
+</div>
+
+<h2>4. Herança</h2>
+<p><strong>Herança</strong> é quando uma classe (filha) recebe tudo o que outra classe (mãe) tem, e acrescenta ou muda o que precisar. A palavra-chave é <code>extends</code>, e o teste é a frase <strong>"é um"</strong>: um Cachorro <em>é um</em> Animal; um Convite <em>é um</em> Registro.</p>
+<span class="rotulo geral">Exemplo geral</span>
+<pre><code>class Animal {
+  String nome;
+  Animal(this.nome);
+
+  void comer() =&gt; print('$nome está comendo');
+  String som() =&gt; '...';
+}
+
+class Cachorro extends Animal {
+  Cachorro(super.nome);                 <span class="c">// repassa o nome para o construtor de Animal</span>
+
+  void buscarBolinha() =&gt; print('$nome buscou a bolinha');   <span class="c">// só dele</span>
+
+  @override
+  String som() =&gt; 'Au au';              <span class="c">// muda o que veio do pai</span>
+}
+
+final rex = Cachorro('Rex');
+rex.comer();          <span class="c">// "Rex está comendo" (herdado, sem escrever de novo)</span>
+rex.buscarBolinha();  <span class="c">// "Rex buscou a bolinha" (novo)</span>
+print(rex.som());     <span class="c">// "Au au" (sobrescrito)</span></code></pre>
+<h3>O que a filha pode fazer</h3>
+<ul>
+  <li><strong>Herdar:</strong> usar atributos e métodos do pai sem reescrever.</li>
+  <li><strong>Acrescentar:</strong> ter atributos e métodos só dela.</li>
+  <li><strong>Sobrescrever (<code>@override</code>):</strong> trocar o comportamento de um método do pai.</li>
+  <li><strong>Chamar o pai com <code>super</code>:</strong> <code>super.metodo()</code> usa a versão do pai dentro da versão nova.</li>
+</ul>
+<pre><code>class Gato extends Animal {
+  Gato(super.nome);
+  @override
+  void comer() {
+    super.comer();                       <span class="c">// faz o que o pai fazia...</span>
+    print('$nome lambeu o prato');       <span class="c">// ...e acrescenta</span>
+  }
+}</code></pre>
+<h3>Regras importantes do Dart</h3>
+<ul>
+  <li><strong>Herança simples:</strong> uma classe só pode ter <strong>um</strong> pai com <code>extends</code>. Para reaproveitar código de várias fontes, existem os mixins (seção 7).</li>
+  <li><strong>Construtores não são herdados.</strong> Cada filha escreve o seu e chama o do pai, com <code>super.campo</code> ou <code>: super(...)</code>.</li>
+  <li><strong>Toda classe herda de <code>Object</code></strong>, mesmo sem escrever <code>extends</code>. É de lá que vêm o <code>toString()</code> e o <code>==</code>.</li>
+</ul>
+<span class="rotulo projeto">No seu projeto</span>
+<div class="file">lib/Organizador.dart</div>
+<pre><code>class Organizador extends Usuario {        <span class="c">// Organizador É UM Usuario</span>
+  Evento? _eventoGerenciado;                <span class="c">// acrescenta: o evento ativo</span>
+  int? _idSessao;                           <span class="c">// acrescenta: a sessão de login</span>
+
+  Organizador({super.idBanco, super.nome, super.email, super.telefone});
+
+  bool get ehAdministrador =&gt;               <span class="c">// acrescenta: um getter só dele</span>
+      idBanco != null &amp;&amp; _idsAdministradores.contains(idBanco);
+
+  @override
+  String obterDados() =&gt; 'ID: $idBanco | Organizador: $nome | ...';   <span class="c">// sobrescreve</span>
+}</code></pre>
+<p>O <code>Organizador</code> herda <strong>em dois níveis</strong>: o <code>idBanco</code> vem do <code>Registro</code> (avô), e o nome, o e-mail e o telefone com validação vêm do <code>Usuario</code> (pai). Ele escreve apenas o que é só dele.</p>
+
+<h2>5. Polimorfismo</h2>
+<p>"Muitas formas": a <strong>mesma chamada</strong> produz <strong>comportamentos diferentes</strong>, dependendo do objeto que a recebe. Ele funciona por causa de duas coisas juntas: a <strong>sobrescrita</strong> (<code>@override</code>) e o fato de um objeto filho poder ser guardado numa variável do tipo do pai.</p>
+<span class="rotulo geral">Exemplo geral</span>
+<pre><code>final bichos = &lt;Animal&gt;[Cachorro('Rex'), Gato('Mimi'), Animal('Genérico')];
+for (final b in bichos) {
+  print('${b.nome}: ${b.som()}');
+}
+<span class="c">// Rex: Au au</span>
+<span class="c">// Mimi: ...        (Gato não sobrescreveu som, usa o do pai)</span>
+<span class="c">// Genérico: ...</span></code></pre>
+<p>O laço trata todos como <code>Animal</code>. Na hora de rodar, o Dart descobre o tipo real de cada objeto e chama a versão certa de <code>som()</code>. Isso tem o nome de <strong>ligação dinâmica</strong> (dynamic dispatch).</p>
+<span class="rotulo geral">Exemplo geral: formas de pagamento</span>
+<pre><code>abstract class Pagamento {
+  double valor;
+  Pagamento(this.valor);
+  double total();                      <span class="c">// cada forma calcula do seu jeito</span>
+}
+class Pix extends Pagamento {
+  Pix(super.valor);
+  @override
+  double total() =&gt; valor * 0.95;       <span class="c">// 5% de desconto</span>
+}
+class Cartao extends Pagamento {
+  int parcelas;
+  Cartao(super.valor, this.parcelas);
+  @override
+  double total() =&gt; parcelas &gt; 3 ? valor * 1.10 : valor;   <span class="c">// juros acima de 3x</span>
+}
+
+double cobrar(Pagamento p) =&gt; p.total();   <span class="c">// não sabe e não precisa saber qual é</span>
+cobrar(Pix(100));        <span class="c">// 95.0</span>
+cobrar(Cartao(100, 6));  <span class="c">// 110.0</span></code></pre>
+<p><strong>A grande vantagem:</strong> para aceitar uma forma de pagamento nova (boleto), basta criar <code>class Boleto extends Pagamento</code>. A função <code>cobrar</code> não muda nada.</p>
+<span class="rotulo projeto">No seu projeto</span>
+<pre><code>final coisas = &lt;Registro&gt;[evento, convite, checkin, itemDaFila];
+for (final r in coisas) {
+  print(r.obterDados());   <span class="c">// cada um responde do SEU jeito</span>
+}
+<span class="c">// ID: 1001 | Nome: Casamento...      (Evento)</span>
+<span class="c">// Convite #5 | Convidado: Ana...     (Convite)</span>
+<span class="c">// 1º | Bruno (id 1200) | na fila...  (ItemListaEspera)</span></code></pre>
+<p>E tem um polimorfismo "escondido": o <code>print(convite)</code> chama <code>toString()</code>, que está no <code>Registro</code> e chama <code>obterDados()</code>. Quem responde é a versão do <code>Convite</code>. Um método do pai chamando um método que só o filho sabe fazer é um padrão conhecido como <strong>Template Method</strong>.</p>
+<div class="nota">
+  <p><strong>E a sobrecarga (overloading)?</strong> Em Java, dá para ter dois métodos com o mesmo nome e parâmetros diferentes. <strong>Dart não permite isso.</strong> No lugar, usa parâmetros opcionais e nomeados, ou construtores nomeados, como <code>Convite(...)</code> e <code>Convite.doBanco(...)</code>.</p>
+</div>
+
+<h2>6. Abstração e classes abstratas</h2>
+<p><strong>Abstração</strong> é escolher o que importa. Num sistema de eventos, um Convidado tem nome, e-mail, telefone, idade e assento. A cor favorita dele não importa, então não entra na classe.</p>
+<p>Uma <strong>classe abstrata</strong> (<code>abstract class</code>) é um molde que <strong>não pode virar objeto</strong>. Ela existe para ser herdada, e pode ter <strong>métodos abstratos</strong>: métodos sem corpo, que cada filha é obrigada a escrever.</p>
+<pre><code>abstract class Forma {
+  double area();              <span class="c">// abstrato: sem corpo</span>
+  void descrever() =&gt; print('Área: ${area()}');   <span class="c">// concreto: usa o abstrato</span>
+}
+class Quadrado extends Forma {
+  double lado;
+  Quadrado(this.lado);
+  @override
+  double area() =&gt; lado * lado;   <span class="c">// obrigado a escrever, ou não compila</span>
+}
+<span class="c">// Forma();   // ERRO: não se cria objeto de classe abstrata</span></code></pre>
+<span class="rotulo projeto">No seu projeto</span>
+<div class="file">lib/Registro.dart</div>
+<pre><code>abstract class Registro {
+  int? _idBanco;
+  Registro({int? idBanco}) : _idBanco = idBanco;
+  int? get idBanco =&gt; _idBanco;
+  set idBanco(int? valor) =&gt; _idBanco = valor;
+
+  String obterDados();                     <span class="c">// abstrato: cada entidade se descreve</span>
+
+  @override
+  String toString() =&gt; obterDados();       <span class="c">// concreto: usa o abstrato</span>
+}</code></pre>
+<ul>
+  <li><strong>Por que existe:</strong> 7 classes precisam de <code>idBanco</code>. Sem o <code>Registro</code>, o mesmo código estaria repetido 7 vezes.</li>
+  <li><strong>Por que é abstrata:</strong> não existe "um registro" sozinho. Ou é um Evento, ou um Convite, ou outra entidade.</li>
+  <li><strong>Por que <code>obterDados()</code> é abstrato:</strong> é uma regra para todo mundo. Quando a classe <code>ItemListaEspera</code> foi criada, o próprio Dart obrigou a escrever o <code>obterDados()</code> dela.</li>
+  <li><strong>O <code>Usuario</code> também é abstrato</strong> e <strong>não</strong> escreve o <code>obterDados()</code>. Isso é permitido porque ele é abstrato: a obrigação passa para <code>Organizador</code> e <code>Convidado</code>.</li>
+</ul>
+
+<h2>7. Interfaces e mixins</h2>
+<h3>implements: "eu prometo ter estes métodos"</h3>
+<p>Em Dart, toda classe também funciona como <strong>interface</strong>. Com <code>implements</code>, a classe promete ter todos os métodos e atributos da outra, mas <strong>não herda nenhum código</strong>: precisa escrever tudo.</p>
+<pre><code>abstract class Exportavel {
+  String paraCsv();
+}
+class Relatorio implements Exportavel {
+  @override
+  String paraCsv() =&gt; 'evento;convidados\nFesta;120';
+}</code></pre>
+<ul>
+  <li><code>extends</code>: <strong>herda</strong> o código. Só um pai.</li>
+  <li><code>implements</code>: só a <strong>promessa</strong>. Pode implementar várias interfaces.</li>
+</ul>
+<h3>Mixin: um "pacote de habilidades"</h3>
+<p>Um <code>mixin</code> é um bloco de código que você <strong>acrescenta</strong> a qualquer classe com <code>with</code>, sem herança. Ele resolve o "só um pai" quando várias classes precisam da mesma habilidade.</p>
+<pre><code>mixin Auditavel {
+  final List&lt;String&gt; log = [];
+  void registrar(String acao) =&gt; log.add('${DateTime.now()}: $acao');
+}
+class Evento2 extends Registro with Auditavel { ... }
+<span class="c">// Evento2 é um Registro E ganha registrar() do mixin</span></code></pre>
+<p>A v3.4 não usa mixins nem <code>implements</code>, mas a versão Flutter do app usa: <code>with SingleTickerProviderStateMixin</code> na animação do nome.</p>
+
+<h2>8. Composição: "tem um"</h2>
+<p>Nem tudo é herança. Quando a frase certa é <strong>"tem um"</strong>, o certo é guardar um objeto dentro do outro. Isso se chama <strong>composição</strong> (ou associação).</p>
+<div class="file">lib/Convite.dart</div>
+<pre><code>class Convite extends Registro {   <span class="c">// Convite É UM Registro (herança)</span>
+  StatusConfirmacao _status;
+  final Evento _evento;            <span class="c">// Convite TEM UM Evento (composição)</span>
+  final Convidado _convidado;      <span class="c">// Convite TEM UM Convidado (composição)</span>
+  ...
+}</code></pre>
+<p>Seria errado escrever <code>Convite extends Evento</code>, porque um convite não é um evento. A composição espelha as <strong>chaves estrangeiras</strong> do banco: <code>convite.evento_idevento</code> no MySQL vira o atributo <code>_evento</code> no Dart. Assim você escreve <code>convite.evento.nomeEvento</code> em vez de procurar o evento pelo id.</p>
+<p>Outros exemplos de composição no projeto: <code>Checkin</code> tem um <code>Convite</code>; <code>ItemListaEspera</code> tem um <code>Evento</code> e um <code>Convidado</code>; <code>Evento</code> tem um <code>HistoricoEvento</code> e uma <code>Mesa</code> padrão.</p>
+
+<h2>9. static, factory e const</h2>
+<h3>static: pertence à classe, não ao objeto</h3>
+<pre><code>class ConfigBanco {
+  static String host = 'localhost';   <span class="c">// um só para o programa inteiro</span>
+}
+ConfigBanco.host;                      <span class="c">// usa sem criar objeto</span></code></pre>
+<p>No projeto: <code>ConfigBanco</code> guarda a configuração da conexão em campos <code>static</code>. <code>Evento._limiteValido</code> é um método <code>static</code>, porque validar um número não depende de um evento específico.</p>
+<h3>Construtor nomeado</h3>
+<p>Uma classe pode ter vários construtores com nomes diferentes. No projeto, todas as entidades têm o normal, para criar um objeto novo, e o <code>doBanco</code>, para montar um objeto a partir de uma linha do MySQL.</p>
+<h3>factory: construtor que decide ou calcula</h3>
+<pre><code>factory VagasEvento.calcular(Evento evento, List&lt;Convite&gt; convites,
+    List&lt;ItemListaEspera&gt; fila) {
+  final ativos = convites.where(...).length;   <span class="c">// faz a conta ANTES</span>
+  return VagasEvento(limite: ..., convitesAtivos: ativos, pessoasNaFila: ...);
+}</code></pre>
+<p>Um construtor normal só preenche campos. Um <code>factory</code> pode fazer contas, escolher que objeto devolver ou até devolver um objeto já existente.</p>
+<h3>Construtor const</h3>
+<pre><code>class EstatisticasEvento {
+  final int totalConvites;
+  ...
+  const EstatisticasEvento({required this.totalConvites, ...});
+}</code></pre>
+<p>Quando todos os campos são <code>final</code>, o construtor pode ser <code>const</code>. O objeto fica <strong>imutável</strong>: depois de criado, não muda. Isso é ótimo para resultados de cálculo, que não devem ser alterados.</p>
+
+<!-- ================================================================== -->
+<div class="parte" id="parte-dart">
+  <div class="eyebrow">Parte IV</div>
+  <h2>Recursos da linguagem Dart</h2>
+  <p>As ferramentas da linguagem que aparecem no projeto, cada uma com exemplo.</p>
+</div>
+
+<h2>1. Strings e interpolação</h2>
+<pre><code>final nome = 'Ana';
+'Olá, $nome'                       <span class="c">// variável simples</span>
+'Tem ${nome.length} letras'        <span class="c">// expressão: precisa de { }</span>
+'R\$ 10,00'                         <span class="c">// \$ mostra o símbolo $ de verdade</span>
+'''Texto com
+várias linhas'''                   <span class="c">// três aspas</span>
+r'[^0-9]'                          <span class="c">// "raw string": a barra \ não é especial (usada em RegExp)</span>
+
+'  oi  '.trim()                    <span class="c">// 'oi'</span>
+'ABC'.toLowerCase()                <span class="c">// 'abc'</span>
+'a,b'.split(',')                   <span class="c">// ['a', 'b']</span>
+2.456.toStringAsFixed(2)           <span class="c">// '2.46'</span>
+'7'.padLeft(2, '0')                <span class="c">// '07' (usado para formatar datas)</span></code></pre>
+
+<h2>2. enum</h2>
+<pre><code>enum StatusConfirmacao { pendente, confirmado, recusado }
+
+final s = StatusConfirmacao.confirmado;
+s.name;                                <span class="c">// 'confirmado' (texto para o banco)</span>
+StatusConfirmacao.values;              <span class="c">// lista com os 3 valores</span></code></pre>
+<p>Um <code>enum</code> é uma lista fechada de opções. Ele impede valores inválidos ("confirmdo") e combina com o <code>ENUM</code> do MySQL. No projeto, a função <code>statusDeTexto</code> faz o caminho contrário: transforma o texto que veio do banco no valor do enum.</p>
+
+<h2>3. Generics: o &lt;T&gt;</h2>
+<p>O <code>&lt;T&gt;</code> diz <strong>o tipo do que está dentro</strong>. Assim o Dart confere os tipos para você.</p>
+<pre><code>List&lt;Convite&gt; convites;               <span class="c">// uma lista SÓ de convites</span>
+Map&lt;String, String?&gt; linha;          <span class="c">// chave texto, valor texto ou null</span>
+Future&lt;bool&gt; promover();              <span class="c">// um bool que vai chegar depois</span></code></pre>
+<div class="file">lib/banco.dart (uma função genérica)</div>
+<pre><code>Future&lt;T&gt; _transacao&lt;T&gt;(Future&lt;T&gt; Function() operacao) async { ... }</code></pre>
+<p>O <code>_transacao</code> funciona para <strong>qualquer</strong> tipo de resultado. Se a operação devolve um <code>int</code>, ele devolve um <code>int</code>; se não devolve nada, ele devolve <code>void</code>. É uma função escrita uma vez e usada em muitos lugares.</p>
+
+<h2>4. Funções como valores</h2>
+<p>Em Dart, uma função é um valor como qualquer outro: pode ser guardada numa variável e passada como parâmetro.</p>
+<pre><code>int dobro(int x) =&gt; x * 2;
+final f = dobro;          <span class="c">// guarda a função</span>
+f(4);                     <span class="c">// 8</span>
+
+void repetir(int vezes, void Function(int) acao) {
+  for (int i = 1; i &lt;= vezes; i++) acao(i);
+}
+repetir(3, (i) =&gt; print('volta $i'));</code></pre>
+<p>No projeto, o <code>_transacao</code> recebe a operação como parâmetro: <code>_transacao(() async { ... })</code>. As funções <code>where</code>, <code>map</code> e <code>any</code> também recebem funções.</p>
+
+<h2>5. Recursos de coleção</h2>
+<pre><code><span class="c">// collection for: monta um Map com um laço dentro</span>
+final porId = {for (final c in convidados) c.idBanco: c};
+
+<span class="c">// collection if: inclui um item só se a condição for verdade</span>
+final opcoes = ['Ver fila', if (temLimite) 'Promover'];
+
+<span class="c">// spread (...): espalha uma lista dentro de outra</span>
+final todos = [...convidadosAntigos, ...convidadosNovos];
+
+<span class="c">// cascade (..): várias operações no mesmo objeto</span>
+final lista = &lt;int&gt;[]..add(1)..add(2);</code></pre>
+<p>O primeiro exemplo está no <code>carregarListaEspera</code>: ele monta um mapa "id → convidado" para achar cada pessoa rápido.</p>
+
+<h2>6. async, await e Future</h2>
+<p>Algumas tarefas demoram: falar com o banco, esperar um segundo, ler um arquivo. Em vez de travar o programa, o Dart usa <code>Future</code>: "um valor que vai chegar depois".</p>
+<pre><code>Future&lt;String&gt; buscarNome() async {
+  await Future.delayed(const Duration(seconds: 1));   <span class="c">// finge demorar</span>
+  return 'Ana';
+}
+
+Future&lt;void&gt; main() async {
+  print('Buscando...');
+  final nome = await buscarNome();   <span class="c">// espera o valor chegar</span>
+  print(nome);
+}</code></pre>
+<ul>
+  <li><code>async</code> marca uma função que tem espera dentro dela.</li>
+  <li><code>await</code> espera um <code>Future</code> terminar antes de seguir para a próxima linha.</li>
+  <li>Uma função <code>async</code> sempre devolve um <code>Future</code>.</li>
+</ul>
+<p>No projeto, quase toda função do <code>banco.dart</code> é <code>async</code>, porque cada uma espera o MariaDB responder. O <code>main</code> do programa também é <code>async</code>.</p>
+
+<h2>7. Exceções: tratando erros</h2>
+<pre><code>try {
+  final n = int.parse('abc');      <span class="c">// lança FormatException</span>
+} on FormatException {
+  print('Isso não é número');      <span class="c">// pega só esse tipo de erro</span>
+} catch (e) {
+  print('Outro erro: $e');         <span class="c">// pega qualquer outro</span>
+} finally {
+  print('Sempre roda');            <span class="c">// com erro ou sem erro</span>
+}</code></pre>
+<span class="rotulo projeto">No seu projeto</span>
+<ul>
+  <li><strong><code>throw ArgumentError(...)</code></strong> nos setters, quando um dado é inválido.</li>
+  <li><strong><code>try / catch</code></strong> nas telas, para mostrar "Erro ao salvar..." sem derrubar o programa.</li>
+  <li><strong><code>finally</code></strong> no <code>main</code>, para sempre fechar a conexão com o banco, mesmo se der erro.</li>
+  <li><strong><code>rethrow</code></strong> no <code>_transacao</code>: depois do <code>ROLLBACK</code>, o erro é jogado de novo para quem chamou também ficar sabendo.</li>
+  <li><strong><code>int.tryParse</code></strong> em vez de <code>int.parse</code>: devolve <code>null</code> em vez de lançar erro quando o usuário digita letras no menu.</li>
+</ul>
+
+<h2>8. Bibliotecas, import e pacotes</h2>
+<pre><code>import 'dart:io';                              <span class="c">// biblioteca do próprio Dart (terminal, arquivos)</span>
+import 'package:mysql_client/mysql_client.dart'; <span class="c">// pacote de fora (pubspec.yaml)</span>
+import 'Evento.dart';                          <span class="c">// arquivo do seu projeto</span>
+import 'usuario.dart' show normalizar;         <span class="c">// importa só uma coisa</span></code></pre>
+<p>Os pacotes externos ficam no <code>pubspec.yaml</code>: <code>mysql_client</code> para o banco e <code>bcrypt</code> para as senhas. O comando <code>dart pub get</code> baixa esses pacotes.</p>
+
+<h2>9. Testes automáticos</h2>
+<pre><code>import 'package:test/test.dart';
+
+void main() {
+  test('limite 10 com 7 convites: sobram 3 vagas', () {
+    final e = _evento(limite: 10);
+    final v = VagasEvento.calcular(e, _convites(e, 7), []);
+    expect(v.vagasLivres, 3);       <span class="c">// "espero que seja 3"</span>
+  });
+}</code></pre>
+<p>Um teste é um pequeno programa que confere se outro código faz o que deveria. O projeto tem 12 testes em <code>test/lista_espera_test.dart</code>, que rodam com <code>dart test</code>.</p>
+
+<!-- ================================================================== -->
+<div class="parte" id="parte-projeto">
+  <div class="eyebrow">Parte V</div>
+  <h2>O projeto por dentro</h2>
+  <p>Arquitetura, a árvore de classes, cada arquivo, o acesso ao banco e o que mudou na v3.4.</p>
+</div>
+
+<h2>1. Arquitetura: como as peças se encaixam</h2>
+<p>O programa roda no terminal e conversa <strong>direto</strong> com o MariaDB pela biblioteca <code>mysql_client</code>, sem API no meio. Ele é dividido em três camadas, e cada camada tem uma função só.</p>
+<div class="camadas">
+  <div class="camada"><div class="n">1</div><div><b>Tela (terminal)</b><span>Mostra os menus e lê o que o usuário digita. Arquivos: <code>bin/app_eventos.dart</code> (menu principal) e <code>lib/gerenciamento*.dart</code> (submenus).</span></div></div>
+  <div class="camada"><div class="n">2</div><div><b>Modelos e regras (classes Dart)</b><span>Guardam os dados, validam e fazem as contas. Exemplos: <code>Evento</code>, <code>Convite</code>, <code>Convidado</code>, <code>ItemListaEspera</code>, <code>VagasEvento</code>, <code>EstatisticasEvento</code>.</span></div></div>
+  <div class="camada"><div class="n">3</div><div><b>Banco (acesso ao MySQL)</b><span>Só esta camada escreve SQL. Arquivo: <code>lib/banco.dart</code>.</span></div></div>
+</div>
+<p><strong>Por que separar assim:</strong> se amanhã o terminal virar um app Flutter, as camadas 2 e 3 continuam iguais. E quando o banco mudou (<code>organizador</code> virou <code>usuario</code>), só o <code>banco.dart</code> precisou ser alterado. A separação também permite <strong>testar</strong> os cálculos sem banco.</p>
+<h3>O caminho de um comando, do começo ao fim</h3>
+<ol class="passos">
+  <li><div>Você digita <code>11</code> no menu. Quem lê é o <code>app_eventos.dart</code>.</div></li>
+  <li><div>Ele chama <code>gerenciarListaEspera(...)</code>, que é a tela da lista de espera.</div></li>
+  <li><div>A tela pede a fila ao <code>banco.carregarListaEspera(...)</code>. Ele roda um <code>SELECT</code> e devolve objetos <code>ItemListaEspera</code>.</div></li>
+  <li><div>A tela pede a conta ao <code>VagasEvento.calcular(...)</code>. O cálculo é feito em Dart, sem SQL.</div></li>
+  <li><div>A tela mostra o resultado com <code>print</code>.</div></li>
+</ol>
+
+<h2>2. A árvore do Registro</h2>
+<div class="arvore" role="img" aria-label="Árvore de herança das classes">
+  <ul>
+    <li><span class="no abs">Registro</span><small>abstrata: idBanco, obterDados(), toString()</small>
+      <ul>
+        <li><span class="no">Evento</span><small>tem HistoricoEvento e Mesa</small></li>
+        <li><span class="no">Convite</span><small>tem Evento e Convidado</small></li>
+        <li><span class="no">Checkin</span><small>tem Convite</small></li>
+        <li><span class="no">Mesa</span></li>
+        <li><span class="no">HistoricoEvento</span></li>
+        <li><span class="no novo">ItemListaEspera</span><small>nova na v3.4 · tem Evento e Convidado</small></li>
+        <li><span class="no abs">Usuario</span><small>abstrata: nome, email, telefone com validação</small>
+          <ul>
+            <li><span class="no">Organizador</span><small>evento ativo, sessão, ehAdministrador</small></li>
+            <li><span class="no">Convidado</span><small>idade, assento, cadastrar()</small></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+<h3>Os três jeitos de "chamar o pai" que aparecem no código</h3>
+<p><strong>1. <code>super.idBanco</code> (o mais curto):</strong> "recebo o idBanco e repasso direto para o construtor do Registro".</p>
+<pre><code>Mesa({super.idBanco, String numeroMesa = 'Geral', int capacidade = 0})</code></pre>
+<p><strong>2. <code>: super(...)</code> (chamando o pai explicitamente):</strong></p>
+<pre><code>Organizador.doBanco({required int idBanco, required String nome, ...})
+    : super(idBanco: idBanco, nome: nome, email: email, telefone: telefone);</code></pre>
+<p><strong>3. <code>: this(...)</code> (chamando outro construtor da mesma classe):</strong> o <code>doBanco</code> só repassa para o construtor principal, e assim a lógica fica num lugar só.</p>
+<pre><code>Convite.doBanco({required int idBanco, ...})
+    : this(idBanco: idBanco, status: status, evento: evento, convidado: convidado);</code></pre>
+<h3>A lista inicializadora</h3>
+<pre><code>Convite({super.idBanco, StatusConfirmacao status = StatusConfirmacao.pendente,
+    required Evento evento, required Convidado convidado})
+    : _status = status,          <span class="c">// preenche os campos privados</span>
+      _evento = evento,          <span class="c">// ANTES do corpo do construtor</span>
+      _convidado = convidado;</code></pre>
+<p>Os campos <code>final</code> (como <code>_evento</code>) só podem receber valor aqui, na lista depois dos <code>:</code>. Por isso o projeto usa esse formato em quase todas as classes.</p>
+
+<h2>3. Cada arquivo e para que serve</h2>
+<div class="tabela"><table>
+  <thead><tr><th>Arquivo</th><th>Para que serve</th></tr></thead>
+  <tbody>
+    <tr><td><code>bin/app_eventos.dart</code></td><td><code>main()</code>: conecta ao banco, faz o login, carrega tudo e mostra o menu principal.</td></tr>
+    <tr><td><code>bin/cadastrar_usuario.dart</code></td><td>Programa separado para criar um usuário com senha.</td></tr>
+    <tr><td><code>lib/banco.dart</code></td><td>Toda a conversa com o MySQL: conectar, consultar, inserir e transações.</td></tr>
+    <tr><td><code>lib/login.dart</code></td><td>Login com 3 tentativas, bloqueio de 60 segundos e "esqueci a senha".</td></tr>
+    <tr><td><code>lib/seguranca.dart</code></td><td>Gera e confere o hash bcrypt das senhas.</td></tr>
+    <tr><td><code>lib/validacao.dart</code></td><td><code>lerLinha()</code>, validação de e-mail, CPF e data, formatação de data.</td></tr>
+    <tr><td><code>lib/Registro.dart</code>, <code>lib/usuario.dart</code></td><td>As classes-mãe abstratas.</td></tr>
+    <tr><td><code>Evento</code>, <code>Convite</code>, <code>Checkin</code>, <code>Mesa</code>, <code>HistoricoEvento</code>, <code>convidado</code>, <code>Organizador</code></td><td>Os modelos: espelhos das tabelas do banco.</td></tr>
+    <tr><td><code>gerenciador_convidados.dart</code>, <code>gerenciamentoConvites.dart</code>, <code>gerenciamentoCheckin.dart</code>, <code>gerenciamentoEventos.dart</code></td><td>Os submenus.</td></tr>
+    <tr><td><code>estatisticas_evento.dart</code>, <code>economia_insumos.dart</code></td><td>Cálculos: presença e desperdício de comida.</td></tr>
+    <tr><td><code>consultas_banco.dart</code>, <code>exibir_evento.dart</code></td><td>Mostrar tabelas e o evento completo.</td></tr>
+    <tr><td><code>lib/ListaEspera.dart</code> (novo)</td><td>Classe <code>ItemListaEspera</code>: uma pessoa esperando vaga.</td></tr>
+    <tr><td><code>lib/vagas_evento.dart</code> (novo)</td><td>Classe <code>VagasEvento</code>: o cálculo de vagas em Dart.</td></tr>
+    <tr><td><code>lib/gerenciamentoListaEspera.dart</code> (novo)</td><td>O menu 11 e as regras da fila.</td></tr>
+    <tr><td><code>test/lista_espera_test.dart</code> (novo)</td><td>12 testes automáticos do cálculo e das validações.</td></tr>
+    <tr><td><code>sql/lista_espera.sql</code>, <code>sql/trigger_reserva.sql</code> (novos)</td><td>Scripts do banco: tabelas da fila e trigger de reserva.</td></tr>
+  </tbody>
+</table></div>
+
+<h2>4. O banco.dart por dentro</h2>
+<h3>Conectar direto ao MySQL</h3>
+<div class="file">lib/banco.dart</div>
+<pre><code>final conn = await MySQLConnection.createConnection(
+  host: ConfigBanco.host, port: ConfigBanco.port,
+  userName: ConfigBanco.usuario, password: ConfigBanco.senha,
+  databaseName: ConfigBanco.nomeBanco, secure: false,
+);
+await conn.connect();
+await conn.execute('SET @historico_pelo_codigo = 1');   <span class="c">// novo na v3.4</span></code></pre>
+<p>O <code>ConfigBanco.carregar()</code> lê esses dados do <code>config.json</code>, ou das variáveis <code>DB_HOST</code>, <code>DB_PORT</code> e outras, se você as passar.</p>
+<h3>Os 4 "ajudantes" privados</h3>
+<ul>
+  <li><code>_consultar(sql, params)</code>: para <code>SELECT</code>. Devolve uma lista de linhas, e cada linha é um <code>Map</code> com coluna e valor.</li>
+  <li><code>_inserir(sql, params)</code>: para <code>INSERT</code>. Devolve o id que o banco gerou (<code>lastInsertID</code>).</li>
+  <li><code>_executar(sql, params)</code>: para <code>UPDATE</code> e <code>DELETE</code>.</li>
+  <li><code>_transacao(() async {...})</code>: roda vários comandos como <strong>um só</strong>.</li>
+</ul>
+<pre><code>Future&lt;T&gt; _transacao&lt;T&gt;(Future&lt;T&gt; Function() operacao) async {
+  await _executar('START TRANSACTION');
+  try {
+    final resultado = await operacao();
+    await _executar('COMMIT');      <span class="c">// deu tudo certo: grava</span>
+    return resultado;
+  } catch (_) {
+    await _executar('ROLLBACK');    <span class="c">// algo falhou: desfaz TUDO</span>
+    rethrow;
+  }
+}</code></pre>
+<p>Este pequeno trecho junta vários conceitos: generics (<code>&lt;T&gt;</code>), função como parâmetro (<code>operacao</code>), <code>async/await</code>, <code>try/catch</code> e <code>rethrow</code>.</p>
+<h3>Parâmetros com :nome, a proteção contra SQL Injection</h3>
+<pre><code>'SELECT ... FROM usuario WHERE email = :email', {'email': email}</code></pre>
+<p>O valor <strong>nunca é colado dentro do texto do SQL</strong>. A biblioteca envia o valor à parte, então se alguém digitar <code>' OR 1=1 --</code> como e-mail, aquilo é tratado como texto comum, não como comando.</p>
+<h3>De linha do banco para objeto</h3>
+<pre><code>for (final l in linhas) {                    <span class="c">// cada l é um Map: coluna → valor</span>
+  fila.add(ItemListaEspera.doBanco(
+    idBanco: _int(l['id']),                  <span class="c">// texto '12' vira int 12</span>
+    evento: evento,
+    convidado: convidado,
+    posicao: _int(l['posicao']),
+    criadoEm: DateTime.parse(l['criado_em']!),
+  ));
+}</code></pre>
+<p>A biblioteca devolve tudo como texto. O código converte cada coluna para o tipo certo (<code>int</code>, <code>DateTime</code>) e usa o construtor <code>doBanco</code>. Essa "tradução" entre tabelas e objetos tem o nome de <strong>mapeamento objeto-relacional</strong>.</p>
+
+<h2>5. O que mudou na v3.4</h2>
+<h3>5.1 A troca de nomes: organizador virou usuario</h3>
+<ul>
+  <li>Foram 13 trechos de SQL no <code>banco.dart</code>: <code>organizador</code> → <code>usuario</code> e <code>id_organizador</code> → <code>id_usuario</code>.</li>
+  <li>Nas tabelas <code>login_registro</code>, <code>sessao_login</code> e <code>troca_senha</code>: <code>organizador_id_organizador</code> → <code>usuario_id_usuario</code>.</li>
+  <li>Na tabela <code>evento</code>, a coluna continua <code>organizador_id_organizador</code>, porque no banco ela não mudou.</li>
+</ul>
+<h3>5.2 Evento.dart: o limite de vagas</h3>
+<div class="file">lib/Evento.dart</div>
+<pre><code>int? _limiteConvidados; <span class="c">// null = sem limite</span>
+
+int? get limiteConvidados =&gt; _limiteConvidados;
+set limiteConvidados(int? valor) =&gt; _limiteConvidados = _limiteValido(valor);
+
+static int? _limiteValido(int? valor) {
+  if (valor != null &amp;&amp; valor &lt; 1) {
+    throw ArgumentError('O limite de convidados precisa ser pelo menos 1: $valor');
+  }
+  return valor;
+}</code></pre>
+<ul>
+  <li><strong>Encapsulamento:</strong> o setter impede limite 0 ou negativo.</li>
+  <li><strong><code>static</code>:</strong> validar um número não depende de um evento específico.</li>
+  <li><strong><code>int?</code>:</strong> o <code>null</code> representa "sem limite", que é o caso dos eventos antigos.</li>
+</ul>
+<h3>5.3 ListaEspera.dart (novo): a classe ItemListaEspera</h3>
+<div class="file">lib/ListaEspera.dart</div>
+<pre><code>enum MotivoSaidaFila { promovido, removido }
+
+class ItemListaEspera extends Registro {
+  final Evento _evento;          <span class="c">// final: a pessoa não muda de evento</span>
+  final Convidado _convidado;    <span class="c">// final: não vira outra pessoa</span>
+  int _posicao;                  <span class="c">// NÃO é final: muda quando alguém sai da frente</span>
+  final DateTime _criadoEm;
+  ...
+  @override
+  String obterDados() =&gt; '$_posicaoº | ${_convidado.nome} ... na fila desde ...';
+}</code></pre>
+<p>Aqui estão quatro conceitos juntos: <strong>herança</strong> (<code>extends Registro</code>), <strong>composição</strong> (tem um Evento e um Convidado), <strong>encapsulamento</strong> (campos privados; só a posição tem setter, que valida) e <strong>polimorfismo</strong> (<code>@override obterDados</code>).</p>
+<h3>5.4 vagas_evento.dart (novo): o cálculo de vagas em Dart</h3>
+<p>Substitui a VIEW do banco. Convite "ativo" é qualquer convite que não foi recusado, porque ele ainda ocupa um lugar.</p>
+<div class="file">lib/vagas_evento.dart</div>
+<pre><code>factory VagasEvento.calcular(Evento evento, List&lt;Convite&gt; convites,
+    List&lt;ItemListaEspera&gt; fila) {
+  final ativos = convites
+      .where((c) =&gt; c.evento == evento &amp;&amp; c.status != StatusConfirmacao.recusado)
+      .length;
+  final naFila = fila.where((item) =&gt; item.evento == evento).length;
+  return VagasEvento(limite: evento.limiteConvidados,
+      convitesAtivos: ativos, pessoasNaFila: naFila);
+}
+
+int? get vagasLivres {
+  final l = limite;
+  if (l == null) return null;
+  final sobra = l - convitesAtivos;
+  return sobra &lt; 0 ? 0 : sobra;      <span class="c">// nunca negativo</span>
+}
+
+bool get lotado =&gt; temLimite &amp;&amp; vagasLivres == 0;</code></pre>
+<h3>5.5 banco.dart: as funções novas da fila</h3>
+<div class="tabela"><table>
+  <thead><tr><th>Função</th><th>SQL que roda</th><th>Para quê</th></tr></thead>
+  <tbody>
+    <tr><td><code>definirLimiteConvidados</code></td><td><code>UPDATE evento SET limite_convidados</code></td><td>Salvar o limite</td></tr>
+    <tr><td><code>carregarListaEspera</code></td><td><code>SELECT ... ORDER BY posicao</code></td><td>Ler a fila em ordem e montar os objetos</td></tr>
+    <tr><td><code>adicionarListaEspera</code></td><td><code>INSERT INTO lista_espera</code></td><td>Pôr no fim da fila</td></tr>
+    <tr><td><code>promoverDaListaEspera</code></td><td>Transação: INSERT convite + INSERT histórico + DELETE da fila + UPDATE das posições</td><td>Dar a vaga</td></tr>
+    <tr><td><code>removerDaListaEspera</code></td><td>Transação: INSERT histórico + DELETE + UPDATE das posições</td><td>Tirar da fila</td></tr>
+    <tr><td><code>_tirarDaFilaEmMassa</code></td><td><code>INSERT ... SELECT</code> + <code>DELETE</code></td><td>Quando um convidado ou evento é apagado</td></tr>
+    <tr><td><code>historicoListaEspera</code></td><td><code>SELECT ... LEFT JOIN convidado</code></td><td>Mostrar o histórico</td></tr>
+  </tbody>
+</table></div>
+<p><strong>Por que promover é uma transação:</strong> são 4 passos. Se a luz caísse depois de criar o convite, mas antes de tirar a pessoa da fila, ela ficaria com convite <strong>e</strong> na fila. Com a transação, ou tudo acontece, ou nada acontece.</p>
+<div class="nota">
+  <p><strong>O SET @historico_pelo_codigo = 1 e a trigger de reserva</strong></p>
+  <p>Agora quem grava o histórico é o <strong>código</strong>. A trigger do banco foi alterada para só gravar <code>WHERE @historico_pelo_codigo IS NULL</code>.</p>
+  <p>Uma variável com <code>@</code> vale só para a conexão que a criou. A v3.4 marca a variável, então nessa conexão a trigger fica quieta e não duplica o histórico. O app com API não marca, então para ele a trigger continua gravando.</p>
+</div>
+<p><strong>Por que existe o <code>_tirarDaFilaEmMassa</code>:</strong> as chaves estrangeiras da <code>lista_espera</code> têm <code>ON DELETE CASCADE</code>. Se um convidado for apagado, o banco apaga as linhas dele na fila sozinho, e nesse caso a trigger não dispara. Por isso o código registra essas saídas no histórico antes de apagar.</p>
+<h3>5.6 O menu 11 e a ligação com os convites</h3>
+<p>As opções do menu 11: 1 ver a fila e as vagas · 2 definir ou alterar o limite (0 = sem limite) · 3 colocar pessoa na fila · 4 promover da fila · 5 remover pessoa da fila · 6 ver histórico · 7 voltar. Qualquer usuário logado pode usar: não há <code>if (ehAdministrador)</code> nele.</p>
+<p>No menu de convites:</p>
+<ul>
+  <li><strong>Convidar com o evento lotado:</strong> o programa oferece colocar a pessoa na fila.</li>
+  <li><strong>Cadastrar alguém novo com o evento lotado:</strong> a pessoa é cadastrada e já vai para a fila.</li>
+  <li><strong>Recusar um convite:</strong> abriu uma vaga, então o programa oferece a vaga ao 1º da fila.</li>
+  <li><strong>Reativar um convite recusado com o evento lotado:</strong> é bloqueado, porque passaria do limite.</li>
+  <li><strong>Quem está na fila não aparece em "convidar"</strong>: só sai da fila pela promoção, para respeitar a ordem.</li>
+</ul>
+
+<!-- ================================================================== -->
+<div class="parte" id="parte-pratica">
+  <div class="eyebrow">Parte VI</div>
+  <h2>Exercícios, glossário e apresentação</h2>
+  <p>Para fixar o conteúdo e chegar seguro na frente dos professores.</p>
+</div>
+
+<h2>1. Exercícios com resposta</h2>
+<div class="exercicio">
+  <p><strong>1.</strong> Qual é o resultado de <code>17 % 5</code> e de <code>17 ~/ 5</code>?</p>
+  <div class="resposta"><b>Resposta:</b> <code>17 % 5 = 2</code> (o resto) e <code>17 ~/ 5 = 3</code> (a divisão inteira), porque 5 × 3 = 15 e sobram 2.</div>
+</div>
+<div class="exercicio">
+  <p><strong>2.</strong> No login, por que existe <code>org ??= await _rodada(...)</code> em vez de chamar a segunda rodada sempre?</p>
+  <div class="resposta"><b>Resposta:</b> o <code>??=</code> só executa se <code>org</code> for null. Se o usuário acertou na primeira rodada, a segunda nem roda.</div>
+</div>
+<div class="exercicio">
+  <p><strong>3.</strong> Escreva um getter <code>estaCheio</code> para uma classe <code>Onibus</code> que tem <code>int lugares</code> e <code>int passageiros</code>.</p>
+  <div class="resposta"><b>Resposta:</b>
+<pre><code>bool get estaCheio =&gt; passageiros &gt;= lugares;</code></pre></div>
+</div>
+<div class="exercicio">
+  <p><strong>4.</strong> Escreva um setter para <code>passageiros</code> que não aceite número negativo nem mais passageiros que lugares.</p>
+  <div class="resposta"><b>Resposta:</b>
+<pre><code>int _passageiros = 0;
+int get passageiros =&gt; _passageiros;
+set passageiros(int valor) {
+  if (valor &lt; 0 || valor &gt; lugares) {
+    throw ArgumentError('Passageiros inválidos: $valor');
+  }
+  _passageiros = valor;
+}</code></pre></div>
+</div>
+<div class="exercicio">
+  <p><strong>5.</strong> O que acontece se você criar <code>class Pulseira extends Registro {}</code> sem mais nada?</p>
+  <div class="resposta"><b>Resposta:</b> o código não compila. <code>Registro</code> tem o método abstrato <code>obterDados()</code>, e toda classe concreta que herda dele é obrigada a implementá-lo com <code>@override</code>.</div>
+</div>
+<div class="exercicio">
+  <p><strong>6.</strong> "Um Check-in é um Convite"? Deveria ser <code>Checkin extends Convite</code>?</p>
+  <div class="resposta"><b>Resposta:</b> não. Um check-in <em>tem um</em> convite (composição). Por isso <code>Checkin</code> herda de <code>Registro</code> e guarda o convite no atributo <code>_convite</code>.</div>
+</div>
+<div class="exercicio">
+  <p><strong>7.</strong> Faça o teste de mesa da renumeração para a fila <strong>1-Ana, 2-Bruno, 3-Carla</strong> quando a <strong>Ana</strong> sai. Quem recebe <code>UPDATE</code>?</p>
+  <div class="resposta"><b>Resposta:</b> Ana é pulada (<code>continue</code>), o contador continua em 1. Bruno: 2 != 1, vira 1; contador vai a 2. Carla: 3 != 2, vira 2. Resultado: 1-Bruno, 2-Carla. Bruno e Carla recebem <code>UPDATE</code>.</div>
+</div>
+<div class="exercicio">
+  <p><strong>8.</strong> Um evento tem limite 50, 52 convites ativos e 3 pessoas na fila. Quanto valem <code>vagasLivres</code>, <code>lotado</code> e <code>cabemDaFila</code>?</p>
+  <div class="resposta"><b>Resposta:</b> a sobra seria −2, mas o código nunca deixa negativo, então <code>vagasLivres = 0</code>. Como tem limite e não sobra vaga, <code>lotado = true</code>. E <code>cabemDaFila = 0</code>.</div>
+</div>
+<div class="exercicio">
+  <p><strong>9.</strong> Por que a função <code>promoverDaListaEspera</code> usa <code>_transacao</code>?</p>
+  <div class="resposta"><b>Resposta:</b> porque ela faz 4 operações que precisam acontecer juntas (criar convite, gravar histórico, apagar da fila, renumerar). Se uma falhar, o <code>ROLLBACK</code> desfaz as outras e o banco não fica com dados pela metade.</div>
+</div>
+<div class="exercicio">
+  <p><strong>10.</strong> Crie uma classe <code>Palestrante</code> que herda de <code>Usuario</code>, tem um tema de palestra e se descreve com <code>obterDados()</code>.</p>
+  <div class="resposta"><b>Resposta:</b>
+<pre><code>class Palestrante extends Usuario {
+  String _tema;
+  Palestrante({super.idBanco, super.nome, super.email, required String tema})
+      : _tema = tema;
+
+  String get tema =&gt; _tema;
+
+  @override
+  String obterDados() =&gt; 'Palestrante: $nome | Tema: $_tema';
+}</code></pre></div>
+</div>
+
+<h2>2. Glossário</h2>
+<dl class="glossario">
+  <dt>Algoritmo</dt><dd>Sequência de passos para resolver um problema.</dd>
+  <dt>Variável</dt><dd>Espaço com nome na memória que guarda um valor de um tipo.</dd>
+  <dt>Tipo</dt><dd>Diz que espécie de valor uma variável guarda: <code>int</code>, <code>String</code>, <code>bool</code>...</dd>
+  <dt>Null safety</dt><dd>Regra do Dart que obriga a marcar com <code>?</code> o que pode ficar vazio.</dd>
+  <dt>Laço (loop)</dt><dd>Estrutura que repete um bloco: <code>for</code>, <code>while</code>, <code>do-while</code>.</dd>
+  <dt>Função</dt><dd>Bloco de código com nome, que recebe parâmetros e pode devolver um valor.</dd>
+  <dt>Lambda</dt><dd>Função anônima e curta, como <code>(c) =&gt; c.presente</code>.</dd>
+  <dt>Classe</dt><dd>Molde que define atributos e métodos.</dd>
+  <dt>Objeto (instância)</dt><dd>Algo criado a partir de uma classe, com valores próprios.</dd>
+  <dt>Construtor</dt><dd>Função especial que cria o objeto. Pode ser nomeado, <code>factory</code> ou <code>const</code>.</dd>
+  <dt>Encapsulamento</dt><dd>Esconder os dados (com <code>_</code>) e controlar o acesso por getters e setters.</dd>
+  <dt>Getter</dt><dd>Método usado como se fosse atributo, para ler: <code>obj.valor</code>.</dd>
+  <dt>Setter</dt><dd>Método usado com <code>=</code>, para gravar e validar: <code>obj.valor = 3</code>.</dd>
+  <dt>Herança</dt><dd>Classe filha recebe o que a mãe tem (<code>extends</code>). Relação "é um".</dd>
+  <dt>Composição</dt><dd>Um objeto guardado dentro do outro. Relação "tem um".</dd>
+  <dt>Polimorfismo</dt><dd>A mesma chamada tem comportamentos diferentes conforme o objeto.</dd>
+  <dt>Sobrescrita (<code>@override</code>)</dt><dd>A filha troca a versão de um método herdado.</dd>
+  <dt>Classe abstrata</dt><dd>Molde que não vira objeto e pode ter métodos sem corpo.</dd>
+  <dt>Interface (<code>implements</code>)</dt><dd>Promessa de ter certos métodos, sem herdar código.</dd>
+  <dt>Mixin (<code>with</code>)</dt><dd>Pacote de código que se acrescenta a uma classe.</dd>
+  <dt>static</dt><dd>Pertence à classe, não a cada objeto.</dd>
+  <dt>enum</dt><dd>Lista fechada de valores possíveis.</dd>
+  <dt>Generics</dt><dd>Tipo entre <code>&lt; &gt;</code> que diz o que uma coleção ou função guarda: <code>List&lt;Convite&gt;</code>.</dd>
+  <dt>Future, async, await</dt><dd>Forma de esperar tarefas demoradas sem travar o programa.</dd>
+  <dt>Exceção</dt><dd>Erro lançado com <code>throw</code> e tratado com <code>try/catch</code>.</dd>
+  <dt>Transação</dt><dd>Vários comandos SQL tratados como um só: <code>COMMIT</code> grava tudo, <code>ROLLBACK</code> desfaz tudo.</dd>
+  <dt>SQL Injection</dt><dd>Ataque em que texto digitado vira comando SQL. É evitado com parâmetros (<code>:email</code>).</dd>
+  <dt>Hash (bcrypt)</dt><dd>"Impressão digital" de mão única da senha. O banco guarda o hash, nunca a senha.</dd>
+  <dt>Teste de mesa</dt><dd>Executar o algoritmo à mão, anotando as variáveis a cada passo.</dd>
+</dl>
+
+<h2>3. Resumo para os professores</h2>
+<div class="fala">
+  <p>"O sistema roda no terminal e conecta direto ao MariaDB com a biblioteca <code>mysql_client</code>, sem API. Ele é dividido em três camadas: telas (menus), modelos e regras (classes Dart) e acesso ao banco (<code>banco.dart</code>), onde todo o SQL usa parâmetros nomeados contra SQL Injection.</p>
+  <p>As entidades herdam da classe abstrata <code>Registro</code>, que centraliza o <code>idBanco</code> e obriga cada uma a implementar <code>obterDados()</code>. Isso é herança e polimorfismo. Organizador e Convidado herdam de <code>Usuario</code>, também abstrata, que valida nome e e-mail nos setters. Os relacionamentos do banco viram composição: um Convite tem um Evento e um Convidado.</p>
+  <p>A lógica aparece no menu (laço com switch), no login (contadores, bloqueio e estados), na validação de CPF (soma ponderada e resto da divisão), nas estatísticas e na economia de insumos (fórmulas com proteção contra divisão por zero).</p>
+  <p>Na versão 3.4 criei a lista de espera com a regra no código: o limite de vagas é um campo do Evento com setter validado, e a classe <code>VagasEvento</code> calcula as vagas a partir dos convites não recusados. Com o evento lotado, a pessoa vai para o fim da fila. Quando alguém recusa, o primeiro da fila recebe a vaga. Promover e remover são transações, com commit ou rollback, que gravam o histórico e renumeram a fila. O cálculo é testado com 12 testes automáticos, sem precisar do banco."</p>
+</div>
+<h3>Perguntas que podem aparecer</h3>
+<ul>
+  <li><strong>"Qual a diferença entre herança e composição?"</strong> Herança é "é um" (<code>Convite extends Registro</code>); composição é "tem um" (o convite guarda um Evento).</li>
+  <li><strong>"Onde está o polimorfismo?"</strong> No <code>obterDados()</code>: todas as entidades são tratadas como <code>Registro</code>, e cada uma responde do seu jeito. O <code>print(objeto)</code> mostra isso.</li>
+  <li><strong>"Por que usar getter e setter?"</strong> Para validar os dados. O setter de <code>limiteConvidados</code> recusa 0 ou negativo, e o de <code>email</code> recusa e-mail inválido.</li>
+  <li><strong>"Por que não deixou tudo no banco?"</strong> Porque a regra fica visível e testável no código. O banco continua garantindo a integridade: chaves estrangeiras, o <code>UNIQUE</code> e a trigger de reserva para outros programas.</li>
+  <li><strong>"O que acontece se cair a conexão no meio de uma promoção?"</strong> O <code>ROLLBACK</code> desfaz tudo, então nenhum dado fica pela metade.</li>
+  <li><strong>"Como a senha é guardada?"</strong> Como hash bcrypt. No login, <code>senhaConfere</code> compara a senha digitada com o hash, e a senha real nunca fica gravada.</li>
+  <li><strong>"Como o administrador é identificado?"</strong> Pelo <code>ehAdministrador</code> do <code>Organizador.dart</code>, que hoje compara com ids fixos (1000 e 1005). O banco já tem a coluna <code>administrador</code>, mas a v3.4 ainda não lê essa coluna. É um ponto de melhoria que você pode citar.</li>
+</ul>
+<h3>Roteiro para demonstrar ao vivo</h3>
+<ol class="passos">
+  <li><div>Escolha um evento na opção 6 e entre na opção 11.</div></li>
+  <li><div>Defina o limite igual ao número de convites atual, para o evento ficar lotado.</div></li>
+  <li><div>Tente convidar alguém pelo menu 2: o programa oferece colocar a pessoa na fila.</div></li>
+  <li><div>Recuse um convite: o programa oferece a vaga ao 1º da fila.</div></li>
+  <li><div>Aumente o limite e use a opção 4 para promover quem coube.</div></li>
+  <li><div>Abra a opção 6 do menu 11 para mostrar o histórico, com a porcentagem de quem ganhou vaga.</div></li>
+  <li><div>Rode <code>dart test</code> para mostrar os testes automáticos passando.</div></li>
+</ol>
+
+<footer>App de Eventos · versão 3.4.0 · material de estudo para a apresentação do Projeto Integrador.</footer>
+</div>
+
+</html>
