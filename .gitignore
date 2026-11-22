@@ -4,3 +4,6 @@ build/
 .env
 *.log
 config.json
+
+test/
+docs/
